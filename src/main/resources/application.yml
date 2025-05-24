@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/charging_system?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
+# 充电站配置
+charging-station:
+  waiting-area:
+    max-capacity: 6
+  charging-area:
+    fast-piles: 2
+    trickle-piles: 3
+    queue-length: 2
+  charging-rates:
+    fast: 30.0  # 度/小时
+    trickle: 7.0  # 度/小时
+  pricing:
+    peak:
+      start: "10:00"
+      end: "15:00"
+      rate: 1.0
+    normal:
+      start: "07:00"
+      end: "10:00"
+      rate: 0.7
+    valley:
+      start: "23:00"
+      end: "07:00"
+      rate: 0.4
+  service-fee: 0.8  # 元/度
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.online.chargingsystem.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl 

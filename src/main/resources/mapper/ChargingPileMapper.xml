@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online.chargingsystem.mapper.ChargingPileMapper">
+    
+    <resultMap id="BaseResultMap" type="com.online.chargingsystem.entity.ChargingPile">
+        <id column="id" property="id"/>
+        <result column="pile_id" property="pileId"/>
+        <result column="type" property="type"/>
+        <result column="status" property="status"/>
+        <result column="power" property="power"/>
+        <result column="current_charging_car" property="currentChargingCar"/>
+        <result column="total_charging_time" property="totalChargingTime"/>
+        <result column="total_charging_amount" property="totalChargingAmount"/>
+        <result column="total_charging_fee" property="totalChargingFee"/>
+        <result column="total_service_fee" property="totalServiceFee"/>
+    </resultMap>
+
+    <select id="findByTypeAndStatus" resultMap="BaseResultMap">
+        SELECT * FROM charging_piles 
+        WHERE type = #{type} AND status = #{status}
+    </select>
+
+    <select id="findByPileId" resultMap="BaseResultMap">
+        SELECT * FROM charging_piles 
+        WHERE pile_id = #{pileId}
+    </select>
+</mapper> 

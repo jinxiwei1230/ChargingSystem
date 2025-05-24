@@ -1,0 +1,202 @@
+@startuml ChargingSystem
+
+' 设置样式
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam ranksep 100
+skinparam nodesep 80
+
+' 分层布局
+together {
+    package "UI层" {
+        class ChargingPileUI {
+            +showPileState()
+            +showPowerOn()
+            +showPowerOff()
+            +showSetParameters()
+            +showStartChargingPile()
+        }
+
+        class QueueUI {
+            +showQueueState()
+            +showCarState()
+        }
+
+        class DispatchUI {
+            +showPriorityDispatch()
+            +showTimeOrderDispatch()
+            +showFaultRecovery()
+            +showSingleDispatch()
+            +showBatchDispatch()
+        }
+
+        class BillUI {
+            +showRequestBill()
+        }
+
+        class DetailedListUI {
+            +showRequestDetailedList()
+        }
+
+        class ChargingUI {
+            +showEChargingRequest()
+            +showModifyAmount()
+            +showModifyMode()
+            +showStartCharging()
+            +showEndCharging()
+            +showChargingState()
+        }
+    }
+}
+
+together {
+    package "Controller层" {
+        class ChargingPileController {
+            -ChargingPileService chargingPileService
+            +powerOn(String pileId)
+            +powerOff(String pileId)
+            +setParameters(Object parameters)
+            +startChargingPile(String pileId)
+        }
+
+        class DetailedListController {
+            -DetailedListService detailedListService
+            +requestDetailedList(String billId)
+        }
+
+        class QueueController {
+            -QueueService queueService
+            +queryQueueState(String queueList)
+            +queryCarState(String carId)
+        }
+
+        class DispatchController {
+            -DispatchService dispatchService
+            +priorityDispatch(String carId)
+            +timeOrderDispatch(String carId)
+            +faultRecover(String pileId)
+            +singleDispatch(String carId)
+            +batchDispatch(String[] carIds)
+        }
+
+        class BillController {
+            -BillService billService
+            +requestBill(String carId, String date)
+        }
+
+        class ChargingController {
+            -ChargingService chargingService
+            +eChargingRequest(String carId, Double requestAmount, String requestMode)
+            +modifyAmount(String carId, Double amount)
+            +modifyMode(String carId, String mode)
+            +startCharging(String carId, String chargePileNum)
+            +endCharging(String carId, String chargingPileNum)
+            +queryChargingState(String carId)
+        }
+    }
+}
+
+together {
+    package "Service层" {
+        interface ChargingPileService {
+            +powerOn(String pileId)
+            +powerOff(String pileId)
+            +setParameters(Object parameters)
+            +startChargingPile(String pileId)
+        }
+
+        interface DetailedListService {
+            +requestDetailedList(String billId)
+        }
+
+        interface QueueService {
+            +queryQueueState(String queueList)
+            +queryCarState(String carId)
+        }
+
+        interface DispatchService {
+            +priorityDispatch(String carId)
+            +timeOrderDispatch(String carId)
+            +faultRecover(String pileId)
+            +singleDispatch(String carId)
+            +batchDispatch(String[] carIds)
+        }
+
+        interface BillService {
+            +requestBill(String carId, String date)
+        }
+
+        interface ChargingService {
+            +eChargingRequest(String carId, Double requestAmount, String requestMode)
+            +modifyAmount(String carId, Double amount)
+            +modifyMode(String carId, String mode)
+            +startCharging(String carId, String chargePileNum)
+            +endCharging(String carId, String chargingPileNum)
+            +queryChargingState(String carId)
+        }
+    }
+}
+
+together {
+    package "Mapper层" {
+        interface ChargingPileMapper {
+            +findByPileId(String pileId)
+            +findByTypeAndStatus(String type, String status)
+            +update(ChargingPile pile)
+        }
+
+        interface ChargingQueueMapper {
+            +findByPileId(String pileId)
+            +findByQueueType(String queueType)
+            +findByCarId(String carId)
+            +findByQueueTypeAndStatus(String queueType, String status)
+            +findById(Long id)
+            +insert(ChargingQueue queue)
+        }
+
+        interface ChargingRequestMapper {
+            +findByStatus(String status)
+            +findByRequestModeAndStatus(String mode, String status)
+            +findByCarIdAndStatus(String carId, String status)
+            +update(ChargingRequest request)
+        }
+
+        interface ChargingRecordMapper {
+            +findById(Long id)
+            +findByCarIdAndDateRange(String carId,
+            LocalDateTime startTime, LocalDateTime endTime)
+        }
+    }
+}
+
+' 关系
+ChargingPileUI --> ChargingPileController
+DetailedListUI --> DetailedListController
+QueueUI --> QueueController
+DispatchUI --> DispatchController
+BillUI --> BillController
+ChargingUI --> ChargingController
+
+ChargingPileController --> ChargingPileService
+DetailedListController --> DetailedListService
+QueueController --> QueueService
+DispatchController --> DispatchService
+BillController --> BillService
+ChargingController --> ChargingService
+
+ChargingPileService --> ChargingPileMapper
+DetailedListService --> ChargingRecordMapper
+QueueService --> ChargingQueueMapper
+DispatchService --> ChargingPileMapper
+DispatchService --> ChargingQueueMapper
+DispatchService --> ChargingRequestMapper
+BillService --> ChargingRecordMapper
+ChargingService --> ChargingRecordMapper
+ChargingService --> ChargingRequestMapper
+
+ChargingPileMapper ..> ChargingPile
+ChargingQueueMapper ..> ChargingQueue
+ChargingRequestMapper ..> ChargingRequest
+ChargingRecordMapper ..> ChargingRecord
+
+@enduml 
