@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online.chargingsystem.mapper.ChargingRequestMapper">
+    
+    <resultMap id="BaseResultMap" type="com.online.chargingsystem.entity.ChargingRequest">
+        <id column="id" property="id"/>
+        <result column="car_id" property="carId"/>
+        <result column="request_mode" property="requestMode"/>
+        <result column="request_amount" property="requestAmount"/>
+        <result column="request_time" property="requestTime"/>
+        <result column="status" property="status"/>
+        <result column="pile_id" property="pileId"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="charging_amount" property="chargingAmount"/>
+        <result column="charging_fee" property="chargingFee"/>
+        <result column="service_fee" property="serviceFee"/>
+    </resultMap>
+
+    <select id="findByStatus" resultMap="BaseResultMap">
+        SELECT * FROM charging_requests 
+        WHERE status = #{status}
+    </select>
+
+    <select id="findByRequestModeAndStatus" resultMap="BaseResultMap">
+        SELECT * FROM charging_requests 
+        WHERE request_mode = #{mode} AND status = #{status}
+    </select>
+
+    <select id="findByCarIdAndStatus" resultMap="BaseResultMap">
+        SELECT * FROM charging_requests 
+        WHERE car_id = #{carId} AND status = #{status}
+    </select>
+</mapper> 

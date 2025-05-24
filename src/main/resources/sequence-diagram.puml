@@ -1,0 +1,110 @@
+@startuml ChargingSystem
+
+' 设置样式
+skinparam sequence {
+    ArrowColor #2C3E50
+    ActorBorderColor #2C3E50
+    LifeLineBorderColor #2C3E50
+    ParticipantBorderColor #2C3E50
+    ParticipantBackgroundColor #ECF0F1
+}
+
+' 定义参与者
+actor User
+participant "ChargingUI" as UI
+participant "ChargingController" as Controller
+participant "ChargingService" as Service
+participant "ChargingRecordMapper" as Mapper
+participant "ChargingPileMapper" as PileMapper
+
+' 1. 查看充电状态
+User -> UI: 请求查看充电状态
+activate UI
+UI -> Controller: queryChargingState(carId)
+activate Controller
+Controller -> Service: queryChargingState(carId)
+activate Service
+Service -> Mapper: findById(carId)
+activate Mapper
+Mapper --> Service: 返回充电记录
+deactivate Mapper
+Service --> Controller: 返回充电状态信息
+deactivate Service
+Controller --> UI: 返回充电状态
+deactivate Controller
+UI --> User: 显示充电状态
+deactivate UI
+
+' 2. 结束充电
+User -> UI: 请求结束充电
+activate UI
+UI -> Controller: endCharging(carId, chargingPileNum)
+activate Controller
+Controller -> Service: endCharging(carId, chargingPileNum)
+activate Service
+Service -> Mapper: update(chargingRecord)
+activate Mapper
+Mapper --> Service: 更新成功
+deactivate Mapper
+Service --> Controller: 返回结果(0/1)
+deactivate Service
+Controller --> UI: 返回结果
+deactivate Controller
+UI --> User: 显示结束充电结果
+deactivate UI
+
+' 3. 查看账单申请
+User -> UI: 请求查看账单
+activate UI
+UI -> Controller: requestBill(carId, date)
+activate Controller
+Controller -> Service: requestBill(carId, date)
+activate Service
+Service -> Mapper: findByCarIdAndDateRange(carId, startTime, endTime)
+activate Mapper
+Mapper --> Service: 返回充电记录列表
+deactivate Mapper
+Service --> Controller: 返回账单信息
+deactivate Service
+Controller --> UI: 返回账单信息
+deactivate Controller
+UI --> User: 显示账单信息
+deactivate UI
+
+' 4. 查看详单申请
+User -> UI: 请求查看详单
+activate UI
+UI -> Controller: requestDetailedList(billId)
+activate Controller
+Controller -> Service: requestDetailedList(billId)
+activate Service
+Service -> Mapper: findById(billId)
+activate Mapper
+Mapper --> Service: 返回详单记录
+deactivate Mapper
+Service --> Controller: 返回详单信息
+deactivate Service
+Controller --> UI: 返回详单信息
+deactivate Controller
+UI --> User: 显示详单信息
+deactivate UI
+
+' 5. 启动充电桩
+User -> UI: 请求启动充电桩
+activate UI
+UI -> Controller: powerOn(pileId)
+activate Controller
+Controller -> Service: powerOn(pileId)
+activate Service
+Service -> PileMapper: update(chargingPile)
+activate PileMapper
+PileMapper --> Service: 更新成功
+deactivate PileMapper
+Service --> Controller: 返回结果(0/1)
+deactivate Service
+Controller --> UI: 返回结果
+deactivate Controller
+UI --> User: 显示启动结果
+deactivate UI
+
+@enduml 
