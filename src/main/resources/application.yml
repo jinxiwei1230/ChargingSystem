@@ -4,47 +4,68 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/charging_system?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/chargingSystem?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
-    password: root
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
-
-# 充电站配置
-charging-station:
-  waiting-area:
-    max-capacity: 6
-  charging-area:
-    fast-piles: 2
-    trickle-piles: 3
-    queue-length: 2
-  charging-rates:
-    fast: 30.0  # 度/小时
-    trickle: 7.0  # 度/小时
-  pricing:
-    peak:
-      start: "10:00"
-      end: "15:00"
-      rate: 1.0
-    normal:
-      start: "07:00"
-      end: "10:00"
-      rate: 0.7
-    valley:
-      start: "23:00"
-      end: "07:00"
-      rate: 0.4
-  service-fee: 0.8  # 元/度
+    password: 123456
 
 mybatis:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.online.chargingsystem.entity
+  mapper-locations: classpath:com/online/chargingSystem/mapper/*.xml
+  type-aliases-package: com.online.chargingSystem.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl 
+
+    
+# 充电站配置
+charging-station:
+  # 等候区配置
+  waiting-area:
+    max-capacity: 6  # 最大车位容量
+  
+  # 充电区配置
+  charging-area:
+    # 充电桩数量配置
+    fast-piles: 2    # 快充电桩数量
+    trickle-piles: 3 # 慢充电桩数量
+    queue-length: 2  # 每个充电桩排队队列长度
+    
+    # 充电功率配置（度/小时）
+    charging-rates:
+      fast: 30.0     # 快充功率
+      trickle: 7.0   # 慢充功率
+    
+    # 计费配置
+    pricing:
+      # 电价时段配置
+      price-periods:
+        - id: 1
+          type: 'STANDARD'
+          start: '07:00:00'
+          end: '10:00:00'
+          price: 0.70
+        - id: 2 
+          type: 'PEAK'
+          start: '10:00:00'
+          end: '15:00:00'
+          price: 1.00
+        - id: 3
+          type: 'STANDARD'
+          start: '15:00:00'
+          end: '18:00:00'
+          price: 0.70
+        - id: 4
+          type: 'PEAK'
+          start: '18:00:00'
+          end: '21:00:00'
+          price: 1.00
+        - id: 5
+          type: 'STANDARD'
+          start: '21:00:00'
+          end: '23:00:00'
+          price: 0.70
+        - id: 6
+          type: 'VALLEY'
+          start: '23:00:00'
+          end: '07:00:00'
+          price: 0.40
+      service-rate: 0.80  # 服务费单价（元/度）
