@@ -1,4 +1,5 @@
-@startuml ChargingSystem
+@startuml ChargingSystem_QueryState
+title 充电状态查询时序图
 
 ' 设置样式
 skinparam sequence {
@@ -15,9 +16,8 @@ participant "ChargingUI" as UI
 participant "ChargingController" as Controller
 participant "ChargingService" as Service
 participant "ChargingRecordMapper" as Mapper
-participant "ChargingPileMapper" as PileMapper
 
-' 1. 查看充电状态
+' 查看充电状态
 User -> UI: 请求查看充电状态
 activate UI
 UI -> Controller: queryChargingState(carId)
@@ -28,32 +28,91 @@ Service -> Mapper: findById(carId)
 activate Mapper
 Mapper --> Service: 返回充电记录
 deactivate Mapper
-Service --> Controller: 返回充电状态信息
+alt 充电记录存在
+    Service --> Controller: 返回充电状态信息(充电中/已完成)
+else 充电记录不存在
+    Service --> Controller: 返回未充电状态
+end
 deactivate Service
 Controller --> UI: 返回充电状态
 deactivate Controller
 UI --> User: 显示充电状态
 deactivate UI
 
-' 2. 结束充电
+@enduml
+
+@startuml ChargingSystem_EndCharging
+title 结束充电时序图
+
+' 设置样式
+skinparam sequence {
+    ArrowColor #2C3E50
+    ActorBorderColor #2C3E50
+    LifeLineBorderColor #2C3E50
+    ParticipantBorderColor #2C3E50
+    ParticipantBackgroundColor #ECF0F1
+}
+
+' 定义参与者
+actor User
+participant "ChargingUI" as UI
+participant "ChargingController" as Controller
+participant "ChargingService" as Service
+participant "ChargingRecordMapper" as Mapper
+participant "BillingService" as Billing
+
+' 结束充电
 User -> UI: 请求结束充电
 activate UI
 UI -> Controller: endCharging(carId, chargingPileNum)
 activate Controller
 Controller -> Service: endCharging(carId, chargingPileNum)
 activate Service
-Service -> Mapper: update(chargingRecord)
+Service -> Mapper: findById(carId)
 activate Mapper
-Mapper --> Service: 更新成功
+Mapper --> Service: 返回充电记录
 deactivate Mapper
-Service --> Controller: 返回结果(0/1)
+alt 充电记录存在
+    Service -> Billing: calculateFee(chargingRecord)
+    activate Billing
+    Billing --> Service: 返回计费结果
+    deactivate Billing
+    Service -> Mapper: update(chargingRecord)
+    activate Mapper
+    Mapper --> Service: 更新成功
+    deactivate Mapper
+    Service --> Controller: 返回成功结果
+else 充电记录不存在
+    Service --> Controller: 返回错误信息
+end
 deactivate Service
 Controller --> UI: 返回结果
 deactivate Controller
 UI --> User: 显示结束充电结果
 deactivate UI
 
-' 3. 查看账单申请
+@enduml
+
+@startuml ChargingSystem_RequestBill
+title 账单查询时序图
+
+' 设置样式
+skinparam sequence {
+    ArrowColor #2C3E50
+    ActorBorderColor #2C3E50
+    LifeLineBorderColor #2C3E50
+    ParticipantBorderColor #2C3E50
+    ParticipantBackgroundColor #ECF0F1
+}
+
+' 定义参与者
+actor User
+participant "BillUI" as UI
+participant "BillController" as Controller
+participant "BillService" as Service
+participant "ChargingBillMapper" as Mapper
+
+' 查看账单申请
 User -> UI: 请求查看账单
 activate UI
 UI -> Controller: requestBill(carId, date)
@@ -62,16 +121,41 @@ Controller -> Service: requestBill(carId, date)
 activate Service
 Service -> Mapper: findByCarIdAndDateRange(carId, startTime, endTime)
 activate Mapper
-Mapper --> Service: 返回充电记录列表
+Mapper --> Service: 返回账单记录
 deactivate Mapper
-Service --> Controller: 返回账单信息
+alt 账单记录存在
+    Service --> Controller: 返回账单信息(总金额、充电次数等)
+else 账单记录不存在
+    Service --> Controller: 返回空账单信息
+end
 deactivate Service
 Controller --> UI: 返回账单信息
 deactivate Controller
 UI --> User: 显示账单信息
 deactivate UI
 
-' 4. 查看详单申请
+@enduml
+
+@startuml ChargingSystem_RequestDetailedList
+title 详单查询时序图
+
+' 设置样式
+skinparam sequence {
+    ArrowColor #2C3E50
+    ActorBorderColor #2C3E50
+    LifeLineBorderColor #2C3E50
+    ParticipantBorderColor #2C3E50
+    ParticipantBackgroundColor #ECF0F1
+}
+
+' 定义参与者
+actor User
+participant "DetailedListUI" as UI
+participant "DetailedListController" as Controller
+participant "DetailedListService" as Service
+participant "BillDetailMapper" as Mapper
+
+' 查看详单申请
 User -> UI: 请求查看详单
 activate UI
 UI -> Controller: requestDetailedList(billId)
@@ -82,25 +166,58 @@ Service -> Mapper: findById(billId)
 activate Mapper
 Mapper --> Service: 返回详单记录
 deactivate Mapper
-Service --> Controller: 返回详单信息
+alt 详单记录存在
+    Service --> Controller: 返回详单信息(充电时间、电量、费用等)
+else 详单记录不存在
+    Service --> Controller: 返回错误信息
+end
 deactivate Service
 Controller --> UI: 返回详单信息
 deactivate Controller
 UI --> User: 显示详单信息
 deactivate UI
 
-' 5. 启动充电桩
+@enduml
+
+@startuml ChargingSystem_PowerOn
+title 充电桩启动时序图
+
+' 设置样式
+skinparam sequence {
+    ArrowColor #2C3E50
+    ActorBorderColor #2C3E50
+    LifeLineBorderColor #2C3E50
+    ParticipantBorderColor #2C3E50
+    ParticipantBackgroundColor #ECF0F1
+}
+
+' 定义参与者
+actor User
+participant "ChargingPileUI" as UI
+participant "ChargingPileController" as Controller
+participant "ChargingPileService" as Service
+participant "ChargingPileMapper" as Mapper
+
+' 启动充电桩
 User -> UI: 请求启动充电桩
 activate UI
 UI -> Controller: powerOn(pileId)
 activate Controller
 Controller -> Service: powerOn(pileId)
 activate Service
-Service -> PileMapper: update(chargingPile)
-activate PileMapper
-PileMapper --> Service: 更新成功
-deactivate PileMapper
-Service --> Controller: 返回结果(0/1)
+Service -> Mapper: findById(pileId)
+activate Mapper
+Mapper --> Service: 返回充电桩信息
+deactivate Mapper
+alt 充电桩状态正常
+    Service -> Mapper: update(chargingPile)
+    activate Mapper
+    Mapper --> Service: 更新成功
+    deactivate Mapper
+    Service --> Controller: 返回启动成功
+else 充电桩状态异常
+    Service --> Controller: 返回错误信息
+end
 deactivate Service
 Controller --> UI: 返回结果
 deactivate Controller

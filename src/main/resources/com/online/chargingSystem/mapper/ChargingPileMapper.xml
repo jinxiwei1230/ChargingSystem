@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online.chargingSystem.mapper.ChargingPileMapper">
+    <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingPile">
+        <id column="pile_id" property="pileId"/>
+        <result column="type" property="type"/>
+        <result column="status" property="status"/>
+        <result column="charging_power" property="chargingPower"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        pile_id, type, status, charging_power, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingPile">
+        INSERT INTO charging_pile (
+            pile_id, type, status, charging_power, create_time, update_time
+        ) VALUES (
+            #{pileId}, #{type}, #{status}, #{chargingPower}, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="update" parameterType="com.online.chargingSystem.entity.ChargingPile">
+        UPDATE charging_pile
+        SET status = #{status},
+            charging_power = #{chargingPower},
+            update_time = NOW()
+        WHERE pile_id = #{pileId}
+    </update>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_pile
+        WHERE pile_id = #{pileId}
+    </select>
+
+    <select id="findByTypeAndStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_pile
+        WHERE type = #{type} AND status = #{status}
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_pile
+    </select>
+
+    <select id="findAvailable" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_pile
+        WHERE status = 'AVAILABLE'
+    </select>
+
+    <select id="findFaulty" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_pile
+        WHERE status = 'FAULTY'
+    </select>
+
+    <update id="updateStatus">
+        UPDATE charging_pile
+        SET status = #{status},
+            update_time = NOW()
+        WHERE pile_id = #{pileId}
+    </update>
+
+    <update id="updateParameters">
+        UPDATE charging_pile
+        SET charging_power = #{chargingPower},
+            update_time = NOW()
+        WHERE pile_id = #{pileId}
+    </update>
+</mapper> 

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online.chargingSystem.mapper.ChargingDetailMapper">
+    <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingDetail">
+        <id column="id" property="id"/>
+        <result column="order_id" property="orderId"/>
+        <result column="user_id" property="userId"/>
+        <result column="pile_id" property="pileId"/>
+        <result column="charging_time" property="chargingTime"/>
+        <result column="charging_amount" property="chargingAmount"/>
+        <result column="electricity_fee" property="electricityFee"/>
+        <result column="service_fee" property="serviceFee"/>
+        <result column="total_fee" property="totalFee"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, order_id, user_id, pile_id, charging_time, charging_amount, electricity_fee, service_fee, total_fee, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingDetail">
+        INSERT INTO charging_detail (
+            order_id, user_id, pile_id, charging_time, charging_amount, electricity_fee, service_fee, total_fee, status, create_time, update_time
+        ) VALUES (
+            #{orderId}, #{userId}, #{pileId}, #{chargingTime}, #{chargingAmount}, #{electricityFee}, #{serviceFee}, #{totalFee}, #{status}, NOW(), NOW()
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO charging_detail (
+            order_id, user_id, pile_id, charging_time, charging_amount, electricity_fee, service_fee, total_fee, status, create_time, update_time
+        ) VALUES 
+        <foreach collection="details" item="detail" separator=",">
+            (
+            #{detail.orderId}, #{detail.userId}, #{detail.pileId}, #{detail.chargingTime}, 
+            #{detail.chargingAmount}, #{detail.electricityFee}, #{detail.serviceFee}, 
+            #{detail.totalFee}, #{detail.status}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <select id="findByOrderId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_detail
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="findByUserIdAndDate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_detail
+        WHERE user_id = #{userId}
+        AND DATE(create_time) = #{date}
+    </select>
+
+    <select id="findByPileIdAndDate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_detail
+        WHERE pile_id = #{pileId}
+        AND DATE(create_time) = #{date}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE charging_detail
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateAmount">
+        UPDATE charging_detail
+        SET charging_amount = #{amount},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+</mapper> 

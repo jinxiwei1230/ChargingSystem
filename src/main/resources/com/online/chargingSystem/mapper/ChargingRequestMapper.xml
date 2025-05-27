@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online.chargingSystem.mapper.ChargingRequestMapper">
+    <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingRequest">
+        <id column="id" property="id"/>
+        <result column="car_id" property="carId"/>
+        <result column="user_id" property="userId"/>
+        <result column="request_mode" property="requestMode"/>
+        <result column="request_amount" property="requestAmount"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, car_id, user_id, request_mode, request_amount, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingRequest">
+        INSERT INTO charging_request (
+            car_id, user_id, request_mode, request_amount, status, create_time, update_time
+        ) VALUES (
+            #{carId}, #{userId}, #{requestMode}, #{requestAmount}, #{status}, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="update" parameterType="com.online.chargingSystem.entity.ChargingRequest">
+        UPDATE charging_request
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_request
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByCarId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_request
+        WHERE car_id = #{carId}
+    </select>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_request
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findPendingRequests" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_request
+        WHERE status = 'PENDING'
+    </select>
+
+    <select id="findChargingRequests" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM charging_request
+        WHERE status = 'CHARGING'
+    </select>
+</mapper> 
