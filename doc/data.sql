@@ -135,3 +135,5 @@ CREATE TABLE charging_detail (
     FOREIGN KEY (order_id) REFERENCES charging_order(order_id) ON DELETE CASCADE,
     INDEX idx_order_periods (order_id, period_seq)
 ) ENGINE=InnoDB COMMENT='充电详单表';
+
+
