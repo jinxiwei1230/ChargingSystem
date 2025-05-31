@@ -18,7 +18,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User registService(User user) {
-        if (userMapper.selectByUsername(user.getUsername()) != null) {
+        if (userMapper.selectByUsername(user.getUsername()) != null ||
+                userMapper.selectByCarNumber(user.getCarNumber()) != null) {
             return null;
         }
         userMapper.insert(user);

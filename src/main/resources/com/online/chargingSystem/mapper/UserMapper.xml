@@ -5,6 +5,7 @@
         <id column="id" property="id"/>
         <id column="username" property="username"/>
         <id column="password" property="password"/>
+        <id column="car_number" property="carNumber"/>
     </resultMap>
     
     <!-- 基础列 -->
@@ -27,6 +28,14 @@
         FROM user
         WHERE username = #{username}
     </select>
+
+    <!-- 根据车牌号查询用户 -->
+    <select id="selectByCarNumber" resultType="com.online.chargingSystem.entity.User">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE car_number = #{carNumber}
+    </select>
     
     <!-- 根据用户名和密码查询用户 -->
     <select id="selectByUsernameAndPassword" resultType="com.online.chargingSystem.entity.User">
@@ -46,9 +55,9 @@
     <!-- 插入新用户 -->
     <insert id="insert" parameterType="com.online.chargingSystem.entity.User" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user (
-            username, password
+            username, car_number, password
         ) VALUES (
-            #{username}, #{password}
+            #{username}, #{carNumber}, #{password}
         )
     </insert>
     
