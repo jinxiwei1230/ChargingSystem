@@ -8,8 +8,4 @@ public class User {
     private Long id;
     private String username;
     private String password;
-    private String phoneNumber;
-    private String email;
-    private LocalDateTime createdTime;
-    private LocalDateTime updatedTime;
 } 

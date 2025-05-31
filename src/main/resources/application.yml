@@ -6,7 +6,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/chargingSystem?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
-    password: 123456
+#    password: 123456
+    password: root
 
 mybatis:
   mapper-locations: classpath:com/online/chargingSystem/mapper/*.xml
