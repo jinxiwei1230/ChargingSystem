@@ -71,7 +71,7 @@ public class ChargingController {
                                       @RequestParam String carId,
                                       @RequestParam Double requestAmount,
                                       @RequestParam ChargingPileType mode) {
-        ChargingRequest result = chargingService.submitChargingRequest(userId, carId, requestAmount, mode);
+        ChargingRequest result = chargingService.submitChargingRequest(userId, requestAmount, mode);
         return result != null ? Result.success("充电申请提交成功", result) : Result.error("充电申请提交失败");
     }
 
