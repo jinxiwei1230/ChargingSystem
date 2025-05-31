@@ -33,7 +33,7 @@ public class UserController {
         if(user!=null){
             return Result.success("注册成功！",user);
         }else{
-            return Result.error("用户名已存在！");
+            return Result.error("用户名或车牌号已存在！");
         }
     }
 }

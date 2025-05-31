@@ -12,6 +12,8 @@ public interface UserMapper {
     
     // 根据用户名查询用户
     User selectByUsername(@Param("username") String username);
+
+    User selectByCarNumber(@Param("carNumber") String carNumber);
     
     // 根据用户名和密码查询用户
     User selectByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
