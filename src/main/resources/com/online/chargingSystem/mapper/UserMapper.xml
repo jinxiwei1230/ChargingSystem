@@ -4,13 +4,14 @@
     <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.User">
         <id column="id" property="id"/>
         <id column="username" property="username"/>
-        <id column="password" property="password"/>
         <id column="car_number" property="carNumber"/>
+        <id column="battery_capacity" property="batteryCapacity"/>
+        <id column="password" property="password"/>
     </resultMap>
     
     <!-- 基础列 -->
     <sql id="Base_Column_List">
-        id, username, password
+        id, username, car_number, battery_capacity, password
     </sql>
     
     <!-- 根据ID查询用户 -->
@@ -55,9 +56,9 @@
     <!-- 插入新用户 -->
     <insert id="insert" parameterType="com.online.chargingSystem.entity.User" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user (
-            username, car_number, password
+            username, car_number, battery_capacity, password
         ) VALUES (
-            #{username}, #{carNumber}, #{password}
+            #{username}, #{carNumber}, #{batteryCapacity}, #{password}
         )
     </insert>
     
