@@ -5,7 +5,7 @@ import com.online.chargingSystem.entity.enums.ChargingPileType;
 
 public interface ChargingService {
     // 提交充电请求
-    ChargingRequest submitChargingRequest(Long userId, String carId, Double requestAmount, ChargingPileType mode);
+    ChargingRequest submitChargingRequest(Long userId, Double requestAmount, ChargingPileType mode);
     
     // 开始充电
     boolean startCharging(Long requestId);
@@ -26,8 +26,8 @@ public interface ChargingService {
     boolean modifyMode(Long requestId, ChargingPileType mode);
     
     // 查询车辆状态
-    ChargingRequest queryCarState(String carId);
+    ChargingRequest queryCarState(String userId);
     
     // 查询充电状态
-    ChargingRequest queryChargingState(String carId);
+    ChargingRequest queryChargingState(String userId);
 } 
