@@ -3,7 +3,6 @@
 <mapper namespace="com.online.chargingSystem.mapper.ChargingRequestMapper">
     <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingRequest">
         <id column="id" property="id"/>
-<!--        <result column="car_id" property="carId"/>-->
         <result column="user_id" property="userId"/>
         <result column="request_mode" property="requestMode"/>
         <result column="request_amount" property="requestAmount"/>

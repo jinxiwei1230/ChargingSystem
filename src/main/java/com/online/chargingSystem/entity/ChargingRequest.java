@@ -11,8 +11,6 @@ public class ChargingRequest {
     private Long id;
     // 关联用户ID
     private Long userId;
-//    // 车辆唯一标识
-//    private String carId;
     // 分配的充电桩ID
     private String chargingPileId;
     // 请求状态
