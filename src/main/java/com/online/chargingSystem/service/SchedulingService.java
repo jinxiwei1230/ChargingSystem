@@ -3,9 +3,9 @@ package com.online.chargingSystem.service;
 import com.online.chargingSystem.entity.ChargingRequest;
 import com.online.chargingSystem.entity.enums.ChargingPileType;
 
-public interface ChargingService {
+public interface SchedulingService {
     // 提交充电请求
-    ChargingRequest submitChargingRequest(Long userId, Double requestAmount, ChargingPileType mode);
+    ChargingRequest handleChargingRequest(Long userId, Double requestAmount, ChargingPileType mode);
     
     // 开始充电
     boolean startCharging(Long requestId);
