@@ -4,11 +4,11 @@
 CREATE TABLE user (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户唯一标识',
     username VARCHAR(50) NOT NULL UNIQUE COMMENT '登录用户名',
-    password VARCHAR(100) NOT NULL COMMENT '加密后的密码',
-    phone_number VARCHAR(20) COMMENT '联系电话',
-    email VARCHAR(100) COMMENT '电子邮箱',
-    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间'
+    password VARCHAR(100) NOT NULL COMMENT '密码',
+--     phone_number VARCHAR(20) COMMENT '联系电话',
+--     email VARCHAR(100) COMMENT '电子邮箱',
+--     created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+--     updated_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间'
 ) ENGINE=InnoDB COMMENT='用户信息表';
 
 -- ----------------------------
