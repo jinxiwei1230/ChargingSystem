@@ -5,6 +5,7 @@ import com.online.chargingSystem.mapper.UserMapper;
 import com.online.chargingSystem.service.UserService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import java.util.Random;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -22,6 +23,9 @@ public class UserServiceImpl implements UserService {
                 userMapper.selectByCarNumber(user.getCarNumber()) != null) {
             return null;
         }
+        Random random = new Random();
+        double batteryCapacity = (random.nextInt(5) + 5) * 10;
+        user.setBatteryCapacity(batteryCapacity);
         userMapper.insert(user);
         return user;
     }

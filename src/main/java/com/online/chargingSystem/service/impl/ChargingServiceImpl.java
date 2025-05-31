@@ -11,7 +11,7 @@ public class ChargingServiceImpl implements ChargingService {
 
     @Override
     @Transactional
-    public ChargingRequest submitChargingRequest(Long userId, String carId, Double requestAmount, ChargingPileType mode) {
+    public ChargingRequest submitChargingRequest(Long userId, Double requestAmount, ChargingPileType mode) {
         // TODO: 实现提交充电申请逻辑
         return null;
     }
@@ -58,13 +58,13 @@ public class ChargingServiceImpl implements ChargingService {
     }
 
     @Override
-    public ChargingRequest queryCarState(String carId) {
+    public ChargingRequest queryCarState(String userId) {
         // TODO: 实现查询车辆状态逻辑
         return null;
     }
 
     @Override
-    public ChargingRequest queryChargingState(String carId) {
+    public ChargingRequest queryChargingState(String userId) {
         // TODO: 实现查询充电状态逻辑
         return null;
     }

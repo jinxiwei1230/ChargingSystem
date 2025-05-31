@@ -3,7 +3,7 @@
 <mapper namespace="com.online.chargingSystem.mapper.ChargingRequestMapper">
     <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingRequest">
         <id column="id" property="id"/>
-        <result column="car_id" property="carId"/>
+<!--        <result column="car_id" property="carId"/>-->
         <result column="user_id" property="userId"/>
         <result column="request_mode" property="requestMode"/>
         <result column="request_amount" property="requestAmount"/>
@@ -13,14 +13,14 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, car_id, user_id, request_mode, request_amount, status, create_time, update_time
+        id, user_id, request_mode, request_amount, status, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingRequest">
         INSERT INTO charging_request (
-            car_id, user_id, request_mode, request_amount, status, create_time, update_time
+            user_id, request_mode, request_amount, status, create_time, update_time
         ) VALUES (
-            #{carId}, #{userId}, #{requestMode}, #{requestAmount}, #{status}, NOW(), NOW()
+            #{userId}, #{requestMode}, #{requestAmount}, #{status}, NOW(), NOW()
         )
     </insert>
 
@@ -35,12 +35,6 @@
         SELECT <include refid="Base_Column_List"/>
         FROM charging_request
         WHERE id = #{id}
-    </select>
-
-    <select id="findByCarId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM charging_request
-        WHERE car_id = #{carId}
     </select>
 
     <select id="findByUserId" resultMap="BaseResultMap">
