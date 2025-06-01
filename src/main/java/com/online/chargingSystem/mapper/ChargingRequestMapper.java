@@ -13,6 +13,7 @@ public interface ChargingRequestMapper {
 
     ChargingRequest findByCarIdAndStatus(String carId, String status);
 
+    // 更新，返回影响的行数
     int update(ChargingRequest request);
 
     // 插入充电请求

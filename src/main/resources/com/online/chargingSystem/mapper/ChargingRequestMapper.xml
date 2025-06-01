@@ -4,29 +4,35 @@
     <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingRequest">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
-        <result column="request_mode" property="requestMode"/>
-        <result column="request_amount" property="requestAmount"/>
+        <result column="charging_pile_id" property="chargingPileId"/>
         <result column="status" property="status"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
+        <result column="mode" property="mode"/>
+        <result column="amount" property="amount"/>
+        <result column="queue_number" property="queueNumber"/>
+        <result column="queue_join_time" property="queueJoinTime"/>
+        <result column="request_time" property="requestTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, request_mode, request_amount, status, create_time, update_time
+        id, user_id, charging_pile_id, status, mode, amount, queue_number, queue_join_time, request_time
     </sql>
 
-    <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingRequest">
+    <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingRequest" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO charging_request (
-            user_id, request_mode, request_amount, status, create_time, update_time
+            user_id, charging_pile_id, status, mode, amount, queue_number, queue_join_time, request_time
         ) VALUES (
-            #{userId}, #{requestMode}, #{requestAmount}, #{status}, NOW(), NOW()
-        )
+                     #{userId}, #{chargingPileId}, #{status}, #{mode}, #{amount}, #{queueNumber}, #{queueJoinTime}, #{requestTime}
+                 )
     </insert>
 
     <update id="update" parameterType="com.online.chargingSystem.entity.ChargingRequest">
         UPDATE charging_request
         SET status = #{status},
-            update_time = NOW()
+            mode = #{mode},
+            amount = #{amount},
+            queue_number = #{queueNumber},
+            queue_join_time = #{queueJoinTime},
+            request_time = #{requestTime}
         WHERE id = #{id}
     </update>
 
@@ -53,4 +59,4 @@
         FROM charging_request
         WHERE status = 'CHARGING'
     </select>
-</mapper> 
+</mapper>
