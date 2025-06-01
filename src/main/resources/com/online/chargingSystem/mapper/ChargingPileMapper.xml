@@ -2,23 +2,29 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.online.chargingSystem.mapper.ChargingPileMapper">
     <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingPile">
-        <id column="pile_id" property="pileId"/>
+        <id column="id" property="id"/>
         <result column="type" property="type"/>
         <result column="status" property="status"/>
         <result column="charging_power" property="chargingPower"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
+        <result column="charging_times" property="chargingTimes"/>
+        <result column="total_charging_duration" property="totalChargingDuration"/>
+        <result column="total_charging_amount" property="totalChargingAmount"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        pile_id, type, status, charging_power, create_time, update_time
+        id, type, status, charging_power, charging_times, total_charging_duration, 
+        total_charging_amount, created_at, updated_at
     </sql>
 
     <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingPile">
         INSERT INTO charging_pile (
-            pile_id, type, status, charging_power, create_time, update_time
+            id, type, status, charging_power, charging_times, total_charging_duration,
+            total_charging_amount, created_at, updated_at
         ) VALUES (
-            #{pileId}, #{type}, #{status}, #{chargingPower}, NOW(), NOW()
+            #{id}, #{type}, #{status}, #{chargingPower}, #{chargingTimes}, #{totalChargingDuration},
+            #{totalChargingAmount}, NOW(), NOW()
         )
     </insert>
 
@@ -26,14 +32,17 @@
         UPDATE charging_pile
         SET status = #{status},
             charging_power = #{chargingPower},
-            update_time = NOW()
-        WHERE pile_id = #{pileId}
+            charging_times = #{chargingTimes},
+            total_charging_duration = #{totalChargingDuration},
+            total_charging_amount = #{totalChargingAmount},
+            updated_at = NOW()
+        WHERE id = #{id}
     </update>
 
     <select id="findById" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM charging_pile
-        WHERE pile_id = #{pileId}
+        WHERE id = #{pileId}
     </select>
 
     <select id="findByTypeAndStatus" resultMap="BaseResultMap">
@@ -56,20 +65,20 @@
     <select id="findFaulty" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM charging_pile
-        WHERE status = 'FAULTY'
+        WHERE status = 'FAULT'
     </select>
 
     <update id="updateStatus">
         UPDATE charging_pile
         SET status = #{status},
-            update_time = NOW()
-        WHERE pile_id = #{pileId}
+            updated_at = NOW()
+        WHERE id = #{pileId}
     </update>
 
     <update id="updateParameters">
         UPDATE charging_pile
         SET charging_power = #{chargingPower},
-            update_time = NOW()
-        WHERE pile_id = #{pileId}
+            updated_at = NOW()
+        WHERE id = #{pileId}
     </update>
 </mapper> 

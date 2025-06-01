@@ -5,6 +5,7 @@ import com.online.chargingSystem.entity.ChargingPile;
 import com.online.chargingSystem.service.ChargingPileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import lombok.Data;
 
 /**
  * 充电桩控制器
@@ -30,29 +31,23 @@ public class ChargingPileController {
 
     /**
      * 报告充电桩故障
-     * @param pileId 充电桩ID
-     * @param faultType 故障类型
-     * @param description 故障描述
+     * @param request 故障报告请求
      * @return 故障报告结果
      */
     @PostMapping("/fault/report")
-    public Result<?> reportFault(@RequestParam String pileId,
-                            @RequestParam String faultType,
-                            @RequestParam String description) {
-        boolean result = chargingPileService.reportFault(pileId, faultType, description);
+    public Result<?> reportFault(@RequestBody FaultReportRequest request) {
+        boolean result = chargingPileService.reportFault(request.getPileId(), request.getFaultType(), request.getDescription());
         return result ? Result.success("故障报告成功") : Result.error("故障报告失败");
     }
 
     /**
      * 恢复充电桩
-     * @param pileId 充电桩ID
-     * @param resolution 故障解决方案
+     * @param request 故障恢复请求
      * @return 恢复结果
      */
     @PostMapping("/fault/resolve")
-    public Result<?> resolveFault(@RequestParam String pileId,
-                             @RequestParam String resolution) {
-        boolean result = chargingPileService.resolveFault(pileId, resolution);
+    public Result<?> resolveFault(@RequestBody FaultResolveRequest request) {
+        boolean result = chargingPileService.resolveFault(request.getPileId(), request.getResolution());
         return result ? Result.success("故障恢复成功") : Result.error("故障恢复失败");
     }
 
@@ -69,14 +64,12 @@ public class ChargingPileController {
 
     /**
      * 设置充电桩参数
-     * @param pileId 充电桩ID
-     * @param chargingPower 充电功率
+     * @param request 参数设置请求
      * @return 设置结果
      */
     @PostMapping("/set-parameters")
-    public Result<?> setParameters(@RequestParam String pileId,
-                              @RequestParam Double chargingPower) {
-        boolean result = chargingPileService.setParameters(pileId, chargingPower);
+    public Result<?> setParameters(@RequestBody ParametersRequest request) {
+        boolean result = chargingPileService.setParameters(request.getPileId(), request.getChargingPower());
         return result ? Result.success("参数设置成功") : Result.error("参数设置失败");
     }
 
@@ -112,4 +105,28 @@ public class ChargingPileController {
         ChargingPile result = chargingPileService.queryPileState(pileId);
         return result != null ? Result.success(result) : Result.error("查询失败");
     }
+}
+
+@Data
+class PowerRequest {
+    private String pileId;
+}
+
+@Data
+class ParametersRequest {
+    private String pileId;
+    private Double chargingPower;
+}
+
+@Data
+class FaultReportRequest {
+    private String pileId;
+    private String faultType;
+    private String description;
+}
+
+@Data
+class FaultResolveRequest {
+    private String pileId;
+    private String resolution;
 } 

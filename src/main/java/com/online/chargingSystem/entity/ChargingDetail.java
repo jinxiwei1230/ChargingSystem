@@ -1,6 +1,6 @@
 package com.online.chargingSystem.entity;
 
-import com.online.chargingSystem.entity.enums.PricePeriodType;
+import com.online.chargingSystem.entity.enums.PeriodType;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,8 +13,8 @@ public class ChargingDetail {
     private String orderId;
     // 计费时段顺序号(1,2,3...表示跨时段计费)
     private Integer periodSeq;
-    // 电价时段类型(PEAK/STANDARD/VALLEY)
-    private PricePeriodType periodType;
+    // 电价时段类型
+    private PeriodType periodType;
     // 时段开始时间
     private LocalDateTime startTime;
     // 时段结束时间

@@ -1,70 +1,98 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.online.chargingSystem.mapper.ChargingOrderMapper">
+    
     <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingOrder">
         <id column="order_id" property="orderId"/>
         <result column="user_id" property="userId"/>
+        <result column="car_id" property="carId"/>
         <result column="request_id" property="requestId"/>
         <result column="pile_id" property="pileId"/>
+        <result column="order_date" property="orderDate"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="total_kwh" property="totalKwh"/>
+        <result column="total_duration" property="totalDuration"/>
+        <result column="total_charge_fee" property="totalChargeFee"/>
+        <result column="total_service_fee" property="totalServiceFee"/>
+        <result column="total_fee" property="totalFee"/>
+        <result column="charging_power" property="chargingPower"/>
         <result column="start_time" property="startTime"/>
         <result column="end_time" property="endTime"/>
-        <result column="total_amount" property="totalAmount"/>
-        <result column="status" property="status"/>
         <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        order_id, user_id, request_id, pile_id, start_time, end_time, total_amount, status, create_time, update_time
+        order_id, user_id, car_id, request_id, pile_id, order_date, order_status,
+        total_kwh, total_duration, total_charge_fee, total_service_fee, total_fee,
+        charging_power, start_time, end_time, create_time
     </sql>
 
+    <!-- 插入订单记录 -->
     <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingOrder">
         INSERT INTO charging_order (
-            order_id, user_id, request_id, pile_id, start_time, end_time, total_amount, status, create_time, update_time
+            order_id, user_id, car_id, request_id, pile_id, order_date, order_status,
+            total_kwh, total_duration, total_charge_fee, total_service_fee, total_fee,
+            charging_power, start_time, end_time, create_time
         ) VALUES (
-            #{orderId}, #{userId}, #{requestId}, #{pileId}, #{startTime}, #{endTime}, #{totalAmount}, #{status}, NOW(), NOW()
+            #{orderId}, #{userId}, #{carId}, #{requestId}, #{pileId}, #{orderDate}, #{orderStatus},
+            #{totalKwh}, #{totalDuration}, #{totalChargeFee}, #{totalServiceFee}, #{totalFee},
+            #{chargingPower}, #{startTime}, #{endTime}, #{createTime}
         )
     </insert>
 
+    <!-- 更新订单记录 -->
     <update id="update" parameterType="com.online.chargingSystem.entity.ChargingOrder">
         UPDATE charging_order
-        SET status = #{status},
-            end_time = #{endTime},
-            total_amount = #{totalAmount},
-            update_time = NOW()
+        SET order_status = #{orderStatus},
+            total_kwh = #{totalKwh},
+            total_duration = #{totalDuration},
+            total_charge_fee = #{totalChargeFee},
+            total_service_fee = #{totalServiceFee},
+            total_fee = #{totalFee},
+            end_time = #{endTime}
         WHERE order_id = #{orderId}
     </update>
 
+    <!-- 根据订单ID查询订单 -->
     <select id="findById" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT 
+        <include refid="Base_Column_List"/>
         FROM charging_order
         WHERE order_id = #{orderId}
     </select>
 
+    <!-- 根据用户ID和日期查询订单列表 -->
     <select id="findByUserIdAndDate" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT 
+        <include refid="Base_Column_List"/>
         FROM charging_order
         WHERE user_id = #{userId}
-        AND DATE(create_time) = #{date}
+        AND order_date = #{date}
+        ORDER BY create_time DESC
     </select>
 
+    <!-- 根据请求ID查询订单 -->
     <select id="findByRequestId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT 
+        <include refid="Base_Column_List"/>
         FROM charging_order
         WHERE request_id = #{requestId}
     </select>
 
+    <!-- 更新订单状态 -->
     <update id="updateStatus">
         UPDATE charging_order
-        SET status = #{status},
-            update_time = NOW()
+        SET order_status = #{status}
         WHERE order_id = #{orderId}
     </update>
 
+    <!-- 更新订单金额 -->
     <update id="updateAmount">
         UPDATE charging_order
-        SET total_amount = #{totalAmount},
-            update_time = NOW()
+        SET total_charge_fee = #{totalChargeFee},
+            total_service_fee = #{totalServiceFee},
+            total_fee = #{totalFee}
         WHERE order_id = #{orderId}
     </update>
+    
 </mapper> 
