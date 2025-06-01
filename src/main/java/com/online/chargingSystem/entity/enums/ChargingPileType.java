@@ -1,5 +1,8 @@
 package com.online.chargingSystem.entity.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum ChargingPileType {
     FAST("快充"),
     SLOW("慢充");
@@ -10,7 +13,4 @@ public enum ChargingPileType {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
-} 
+}

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online.chargingSystem.mapper.UserMapper">
+    <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.User">
+        <id column="id" property="id"/>
+        <id column="username" property="username"/>
+        <id column="car_number" property="carNumber"/>
+        <id column="battery_capacity" property="batteryCapacity"/>
+        <id column="password" property="password"/>
+    </resultMap>
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, username, car_number, battery_capacity, password
+    </sql>
+    
+    <!-- 根据ID查询用户 -->
+    <select id="selectById" resultType="com.online.chargingSystem.entity.User">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 根据用户名查询用户 -->
+    <select id="selectByUsername" resultType="com.online.chargingSystem.entity.User">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE username = #{username}
+    </select>
+
+    <!-- 根据车牌号查询用户 -->
+    <select id="selectByCarNumber" resultType="com.online.chargingSystem.entity.User">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE car_number = #{carNumber}
+    </select>
+    
+    <!-- 根据用户名和密码查询用户 -->
+    <select id="selectByUsernameAndPassword" resultType="com.online.chargingSystem.entity.User">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE username = #{username} AND password = #{password}
+    </select>
+    
+    <!-- 查询所有用户 -->
+    <select id="selectAll" resultType="com.online.chargingSystem.entity.User">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user
+    </select>
+    
+    <!-- 插入新用户 -->
+    <insert id="insert" parameterType="com.online.chargingSystem.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user (
+            username, car_number, battery_capacity, password
+        ) VALUES (
+            #{username}, #{carNumber}, #{batteryCapacity}, #{password}
+        )
+    </insert>
+    
+    <!-- 更新用户信息 -->
+    <update id="update" parameterType="com.online.chargingSystem.entity.User">
+        UPDATE user
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="password != null">password = #{password},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 删除用户 -->
+    <delete id="deleteById">
+        DELETE FROM user WHERE id = #{id}
+    </delete>
+    
+</mapper> 

@@ -1,8 +1,8 @@
 -- 用户表数据
-INSERT INTO user (username, password, phone_number, email) VALUES
-('user1', '123456', '13800138001', 'user1@example.com'),
-('user2', '123456', '13800138002', 'user2@example.com'),
-('admin', 'admin', '13800138000', 'admin@example.com');
+INSERT INTO user (username, car_number, password) VALUES
+('user1', '京A12345','123456'),
+('user2', '京B67890','123456'),
+('user3', '京A12445','123456');
 
 -- 充电桩表数据
 INSERT INTO charging_pile (id, type, status, charging_power) VALUES

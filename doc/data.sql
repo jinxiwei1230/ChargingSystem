@@ -4,11 +4,9 @@
 CREATE TABLE user (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户唯一标识',
     username VARCHAR(50) NOT NULL UNIQUE COMMENT '登录用户名',
-    password VARCHAR(100) NOT NULL COMMENT '加密后的密码',
-    phone_number VARCHAR(20) COMMENT '联系电话',
-    email VARCHAR(100) COMMENT '电子邮箱',
-    created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间'
+    car_number VARCHAR(50) NOT NULL UNIQUE COMMENT '车牌号',
+    battery_capacity DOUBLE COMMENT '车辆电池容量',
+    password VARCHAR(100) NOT NULL COMMENT '密码'
 ) ENGINE=InnoDB COMMENT='用户信息表';
 
 -- ----------------------------
@@ -32,7 +30,7 @@ CREATE TABLE charging_pile (
 CREATE TABLE charging_request (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '请求唯一ID',
     user_id BIGINT NOT NULL COMMENT '关联用户ID',
-    car_id VARCHAR(20) NOT NULL COMMENT '车辆唯一标识',
+--     car_id VARCHAR(20) NOT NULL COMMENT '车辆唯一标识',
     charging_pile_id VARCHAR(10) COMMENT '分配的充电桩ID（可为空）',
     status ENUM('WAITING', 'CHARGING', 'COMPLETED', 'CANCELED') NOT NULL DEFAULT 'WAITING' COMMENT '请求状态',
     mode ENUM('FAST', 'SLOW') NOT NULL COMMENT '充电模式',
