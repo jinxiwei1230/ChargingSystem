@@ -107,6 +107,7 @@ public class SchedulingServiceImpl implements SchedulingService {
         return null;
     }
 
+    // 获取排队号码
     @Override
     public String getQueueNumber(Long userId) {
         ChargingRequest request = getLatestRequest(userId);
