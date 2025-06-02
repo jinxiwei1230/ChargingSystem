@@ -38,6 +38,15 @@ public class SchedulingServiceImpl implements SchedulingService {
     private final AtomicInteger fastQueueCounter = new AtomicInteger(0);
     private final AtomicInteger slowQueueCounter = new AtomicInteger(0);
 
+    // 获取用户最新一次充电请求
+    private ChargingRequest getLatestRequest(long userId){
+        List<ChargingRequest> request = chargingRequestMapper.findByUserId(userId);
+        if(request.isEmpty()){
+            return null;
+        }
+        return request.get(request.size() - 1);
+    }
+
     @Override
     public boolean isWaitingAreaFull() {
         return waitingQueue.getFastQueue().size() + waitingQueue.getSlowQueue().size() >= 6;
@@ -99,19 +108,38 @@ public class SchedulingServiceImpl implements SchedulingService {
     }
 
     @Override
-    public String checkQueueNumber(Long userId) {
-        List<ChargingRequest> request = chargingRequestMapper.findByUserId(userId);
-        if(request.isEmpty()){
-            return null;
+    public String getQueueNumber(Long userId) {
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+        return request.getQueueNumber();
+    }
+
+    @Override
+    public int getAheadNumber(Long userId) {
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+        
+        // 获取对应的等待队列
+        Queue<Long> targetQueue = request.getMode() == ChargingPileType.FAST ? 
+            waitingQueue.getFastQueue() : waitingQueue.getSlowQueue();
+            
+        // 计算前车数量
+        int aheadCount = 0;
+        for (Long requestId : targetQueue) {
+            if (requestId.equals(request.getId())) {
+                break;
+            }
+            aheadCount++;
         }
-        return request.get(request.size() - 1).getQueueNumber();
+        
+        return aheadCount;
     }
 
     @Override
     @Transactional
     public void modifyChargingMode(Long userId, ChargingPileType mode) {
-        List<ChargingRequest> list = chargingRequestMapper.findByUserId(userId);
-        ChargingRequest request = list.get(list.size() - 1);
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
         request.setMode(mode);
 
         // 重新生成排队号
@@ -129,36 +157,31 @@ public class SchedulingServiceImpl implements SchedulingService {
                 moveToAnotherQueue(fastQueue, slowQueue, request.getId());
                 break;
         }
-        System.out.println("修改后的快队列: " + fastQueue);
-        System.out.println("修改后的慢队列: " + slowQueue);
+        // 查看队列状态
+        printWaitingQueues();
     }
 
     @Override
     public void modifyChargingAmount(Long userId, Double requestAmount) {
-        List<ChargingRequest> list = chargingRequestMapper.findByUserId(userId);
-        ChargingRequest request = list.get(list.size() - 1);
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
         request.setAmount(requestAmount);
         chargingRequestMapper.update(request);
     }
 
     // queue2是target queue
-    public static void moveToAnotherQueue(Queue<Long> queue1, Queue<Long> queue2, long target) {
+    private static void moveToAnotherQueue(Queue<Long> queue1, Queue<Long> queue2, long target) {
         // 创建一个临时队列用于存储非目标元素
         Queue<Long> tempQueue = new LinkedList<>();
-
-        // 遍历队列1
         while (!queue1.isEmpty()) {
-            long element = queue1.poll(); // 移除并返回队列头部的元素
+            long element = queue1.poll();
             if (element == target) {
-                // 如果找到目标元素，将其添加到队列2的末尾
                 queue2.add(element);
             } else {
-                // 如果不是目标元素，加入临时队列
                 tempQueue.add(element);
             }
         }
 
-        // 将临时队列中的元素重新加入队列1
         while (!tempQueue.isEmpty()) {
             queue1.add(tempQueue.poll());
         }
@@ -167,38 +190,44 @@ public class SchedulingServiceImpl implements SchedulingService {
 
     @Override
     public boolean isInWaitingArea(Long userId) {
-        List<ChargingRequest> list = chargingRequestMapper.findByUserId(userId);
-        ChargingRequest request = list.get(list.size() - 1);
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
         return request.getStatus() == WAITING_IN_WAITING_AREA;
     }
 
     @Override
     @Transactional
     public void cancelAndRequeue(Long userId) {
-        List<ChargingRequest> list = chargingRequestMapper.findByUserId(userId);
-        if (list.isEmpty()) return;
-        ChargingRequest request = list.get(list.size() - 1);
-        // 1. 从等候区或充电区队列移除
-        removeFromAllQueues(request.getId(), request.getMode());
-        // 2. 设置原请求为已取消
-        request.setStatus(RequestStatus.CANCELED);
-        chargingRequestMapper.update(request);
-        // 3. 重新生成新请求并入等候区
+        System.out.println("当前队列：");
+        printWaitingQueues();
+
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+
+        cancel(userId);
+
+        // 重新生成新请求并入等候区
         handleChargingRequest(userId, request.getAmount(), request.getMode());
+        System.out.println("重新入队后的队列：");
+        printWaitingQueues();
     }
 
     @Override
     @Transactional
-    public void cancelAndLeave(Long userId) {
-        List<ChargingRequest> list = chargingRequestMapper.findByUserId(userId);
-        if (list.isEmpty()) return;
-        ChargingRequest request = list.get(list.size() - 1);
+    public void cancel(Long userId) {
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+
         // 1. 从等候区或充电区队列移除
         removeFromAllQueues(request.getId(), request.getMode());
+        System.out.println("移除后的队列：");
+        printWaitingQueues();
+
         // 2. 设置原请求为已取消
         request.setStatus(RequestStatus.CANCELED);
         chargingRequestMapper.update(request);
     }
+
 
     // 辅助方法：从等候区和所有充电区队列移除
     private void removeFromAllQueues(Long requestId, ChargingPileType mode) {
@@ -207,6 +236,14 @@ public class SchedulingServiceImpl implements SchedulingService {
         waitingQueue.getSlowQueue().remove(requestId);
         // 2. 充电区（如有统一管理类可遍历所有充电桩队列，这里假设无，留接口）
         // TODO: 如果有充电区队列管理类，在此补充遍历所有充电桩队列并remove(requestId)
+    }
+
+    // 调试用：打印当前等待区队列
+    private void printWaitingQueues(){
+        Queue<Long> fastQueue = waitingQueue.getFastQueue();
+        Queue<Long> slowQueue = waitingQueue.getSlowQueue();
+        System.out.println("快队列: " + fastQueue);
+        System.out.println("慢队列: " + slowQueue);
     }
 
 } 
