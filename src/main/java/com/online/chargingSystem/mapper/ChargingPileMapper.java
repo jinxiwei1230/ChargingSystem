@@ -1,6 +1,7 @@
 package com.online.chargingSystem.mapper;
 
 import com.online.chargingSystem.entity.ChargingPile;
+import com.online.chargingSystem.dto.ChargingPileQueueDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
@@ -33,4 +34,17 @@ public interface ChargingPileMapper {
     
     // 更新充电桩参数
     int updateParameters(@Param("pileId") String pileId, @Param("chargingPower") Double chargingPower);
+
+    /**
+     * 查询指定充电桩的等候队列信息
+     * @param pileId 充电桩ID
+     * @return 等候队列信息列表
+     */
+    List<ChargingPileQueueDTO> findPileQueueInfo(@Param("pileId") String pileId);
+
+    /**
+     * 查询所有充电桩的等候队列信息
+     * @return 所有充电桩的等候队列信息
+     */
+    List<ChargingPileQueueDTO> findAllPileQueueInfo();
 } 
