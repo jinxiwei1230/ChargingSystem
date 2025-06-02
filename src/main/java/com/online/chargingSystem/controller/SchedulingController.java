@@ -36,9 +36,16 @@ public class SchedulingController {
     }
 
     // 查看本车排队号码（返回null表示还没有分配排队号码）
-    @RequestMapping("/checkQueueNumber")
-    public Result<?> checkQueueNumber(@RequestParam Long userId) {
-        String result = schedulingService.checkQueueNumber(userId);
+    @RequestMapping("/getQueueNumber")
+    public Result<?> getQueueNumber(@RequestParam Long userId) {
+        String result = schedulingService.getQueueNumber(userId);
+        return Result.success("获取成功", result);
+    }
+
+    // 查看本充电模式下前车等待数量
+    @RequestMapping("/getAheadNumber")
+    public Result<?> getAheadNumber(@RequestParam Long userId) {
+        int result = schedulingService.getAheadNumber(userId);
         return Result.success("获取成功", result);
     }
 
@@ -77,7 +84,7 @@ public class SchedulingController {
     // 取消充电并离开
     @RequestMapping("/cancelAndLeave")
     public Result<?> cancelAndLeave(@RequestParam Long userId) {
-        schedulingService.cancelAndLeave(userId);
+        schedulingService.cancel(userId);
         return Result.success("取消充电并离开成功");
     }
 
