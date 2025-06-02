@@ -9,7 +9,7 @@ public class ChargingPileQueue {
     // 队列对应充电桩编号(如A/B/C/D/E)
     private String pileId;
     //队列长度=2
-    private static final int QUEUE_LENGTH = 2;
+    public static final int QUEUE_LENGTH = 2;
     //队列，存储请求id
     private Queue<Long> queue;
 }

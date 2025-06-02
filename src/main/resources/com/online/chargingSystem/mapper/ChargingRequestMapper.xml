@@ -32,7 +32,8 @@
             amount = #{amount},
             queue_number = #{queueNumber},
             queue_join_time = #{queueJoinTime},
-            request_time = #{requestTime}
+            request_time = #{requestTime},
+            charging_pile_id = #{chargingPileId}
         WHERE id = #{id}
     </update>
 

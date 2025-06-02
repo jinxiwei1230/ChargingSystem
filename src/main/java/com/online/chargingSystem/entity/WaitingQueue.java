@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.Queue;
 
-// 等候区队列（只有一条）
+// 等候区队列（有两条：慢充、快充）
 @Data
 @Component
 public class WaitingQueue {
