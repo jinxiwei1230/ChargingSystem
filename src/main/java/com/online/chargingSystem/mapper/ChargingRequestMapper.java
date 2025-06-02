@@ -33,4 +33,12 @@ public interface ChargingRequestMapper {
     
     // 查询正在充电的请求
     List<ChargingRequest> findChargingRequests();
+
+    /**
+     * 根据用户ID和状态查询充电请求
+     * @param userId 用户ID
+     * @param status 请求状态
+     * @return 充电请求
+     */
+    ChargingRequest findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") String status);
 } 
