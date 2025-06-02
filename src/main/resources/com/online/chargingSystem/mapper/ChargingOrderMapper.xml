@@ -15,7 +15,6 @@
         <result column="total_charge_fee" property="totalChargeFee"/>
         <result column="total_service_fee" property="totalServiceFee"/>
         <result column="total_fee" property="totalFee"/>
-        <result column="charging_power" property="chargingPower"/>
         <result column="start_time" property="startTime"/>
         <result column="end_time" property="endTime"/>
         <result column="create_time" property="createTime"/>
@@ -24,7 +23,7 @@
     <sql id="Base_Column_List">
         order_id, user_id, car_id, request_id, pile_id, order_date, order_status,
         total_kwh, total_duration, total_charge_fee, total_service_fee, total_fee,
-        charging_power, start_time, end_time, create_time
+        start_time, end_time, create_time
     </sql>
 
     <!-- 插入订单记录 -->
@@ -32,11 +31,11 @@
         INSERT INTO charging_order (
             order_id, user_id, car_id, request_id, pile_id, order_date, order_status,
             total_kwh, total_duration, total_charge_fee, total_service_fee, total_fee,
-            charging_power, start_time, end_time, create_time
+            start_time, end_time, create_time
         ) VALUES (
             #{orderId}, #{userId}, #{carId}, #{requestId}, #{pileId}, #{orderDate}, #{orderStatus},
             #{totalKwh}, #{totalDuration}, #{totalChargeFee}, #{totalServiceFee}, #{totalFee},
-            #{chargingPower}, #{startTime}, #{endTime}, #{createTime}
+            #{startTime}, #{endTime}, #{createTime}
         )
     </insert>
 
@@ -55,8 +54,7 @@
 
     <!-- 根据订单ID查询订单 -->
     <select id="findById" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
+        SELECT *
         FROM charging_order
         WHERE order_id = #{orderId}
     </select>
@@ -94,5 +92,48 @@
             total_fee = #{totalFee}
         WHERE order_id = #{orderId}
     </update>
+
+    <select id="countUserOrders" resultType="int">
+        SELECT COUNT(*)
+        FROM charging_order
+        WHERE user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND order_status = #{status}
+        </if>
+        <if test="startDate != null">
+            AND order_date >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND order_date &lt;= #{endDate}
+        </if>
+    </select>
+
+    <select id="findUserOrders" resultMap="BaseResultMap">
+        SELECT *
+        FROM charging_order
+        WHERE user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND order_status = #{status}
+        </if>
+        <if test="startDate != null">
+            AND order_date >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND order_date &lt;= #{endDate}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="findPileOrders" resultMap="BaseResultMap">
+        SELECT *
+        FROM charging_order
+        WHERE pile_id = #{pileId}
+        AND order_date = #{date}
+        <if test="status != null and status != ''">
+            AND order_status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
     
 </mapper> 

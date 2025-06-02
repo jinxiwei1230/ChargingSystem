@@ -60,4 +60,13 @@
         FROM charging_request
         WHERE status = 'CHARGING'
     </select>
+
+    <select id="findByUserIdAndStatus" resultType="com.online.chargingSystem.entity.ChargingRequest">
+        SELECT *
+        FROM charging_request
+        WHERE user_id = #{userId}
+        AND status = #{status}
+        ORDER BY request_time DESC
+        LIMIT 1
+    </select>
 </mapper>
