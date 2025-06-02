@@ -9,9 +9,9 @@ import java.util.List;
 @Mapper
 public interface ChargingOrderMapper {
     /**
-     * 插入订单记录
-     * @param order 订单信息
-     * @return 插入的记录数
+     * 插入充电订单
+     * @param order 充电订单
+     * @return 影响的行数
      */
     int insert(ChargingOrder order);
     
@@ -23,9 +23,9 @@ public interface ChargingOrderMapper {
     int update(ChargingOrder order);
     
     /**
-     * 根据订单ID查询订单
+     * 根据订单ID查询充电订单
      * @param orderId 订单ID
-     * @return 订单信息
+     * @return 充电订单
      */
     ChargingOrder findById(@Param("orderId") String orderId);
     
@@ -38,11 +38,11 @@ public interface ChargingOrderMapper {
     List<ChargingOrder> findByUserIdAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
     
     /**
-     * 根据请求ID查询订单
+     * 根据请求ID查询充电订单
      * @param requestId 请求ID
-     * @return 订单信息
+     * @return 充电订单
      */
-    ChargingOrder findByRequestId(@Param("requestId") Long requestId);
+    ChargingOrder findByRequestId(@Param("requestId") String requestId);
     
     /**
      * 更新订单状态
@@ -66,4 +66,45 @@ public interface ChargingOrderMapper {
         @Param("totalServiceFee") Double totalServiceFee,
         @Param("totalFee") Double totalFee
     );
+
+    /**
+     * 统计用户订单数量
+     * @param userId 用户ID
+     * @param status 订单状态
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 订单数量
+     */
+    int countUserOrders(@Param("userId") Long userId,
+                       @Param("status") String status,
+                       @Param("startDate") LocalDate startDate,
+                       @Param("endDate") LocalDate endDate);
+
+    /**
+     * 查询用户订单列表
+     * @param userId 用户ID
+     * @param status 订单状态
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param offset 偏移量
+     * @param size 每页条数
+     * @return 订单列表
+     */
+    List<ChargingOrder> findUserOrders(@Param("userId") Long userId,
+                                      @Param("status") String status,
+                                      @Param("startDate") LocalDate startDate,
+                                      @Param("endDate") LocalDate endDate,
+                                      @Param("offset") int offset,
+                                      @Param("size") int size);
+
+    /**
+     * 查询充电桩订单列表
+     * @param pileId 充电桩ID
+     * @param date 日期
+     * @param status 订单状态
+     * @return 订单列表
+     */
+    List<ChargingOrder> findPileOrders(@Param("pileId") String pileId,
+                                      @Param("date") LocalDate date,
+                                      @Param("status") String status);
 } 
