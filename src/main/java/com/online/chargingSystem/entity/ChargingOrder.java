@@ -32,6 +32,8 @@ public class ChargingOrder {
     private BigDecimal totalServiceFee;
     // 订单总额(电费+服务费)
     private BigDecimal totalFee;
+    // 充电功率(度/小时)
+    private BigDecimal chargingPower;
     // 充电开始时间
     private LocalDateTime startTime;
     // 充电结束时间
