@@ -45,12 +45,6 @@
         WHERE id = #{pileId}
     </select>
 
-    <select id="findByTypeAndStatus" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM charging_pile
-        WHERE type = #{type} AND status = #{status}
-    </select>
-
     <select id="findAll" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM charging_pile

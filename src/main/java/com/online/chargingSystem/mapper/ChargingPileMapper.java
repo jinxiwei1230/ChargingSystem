@@ -1,8 +1,11 @@
 package com.online.chargingSystem.mapper;
 
 import com.online.chargingSystem.entity.ChargingPile;
+import com.online.chargingSystem.entity.enums.ChargingPileStatus;
+import com.online.chargingSystem.entity.enums.ChargingPileType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 @Mapper
@@ -15,9 +18,6 @@ public interface ChargingPileMapper {
     
     // 根据ID查询充电桩
     ChargingPile findById(@Param("pileId") String pileId);
-    
-    // 根据类型和状态查询充电桩
-    List<ChargingPile> findByTypeAndStatus(@Param("type") String type, @Param("status") String status);
     
     // 查询所有充电桩
     List<ChargingPile> findAll();
@@ -33,4 +33,24 @@ public interface ChargingPileMapper {
     
     // 更新充电桩参数
     int updateParameters(@Param("pileId") String pileId, @Param("chargingPower") Double chargingPower);
+    
+    /**
+     * 根据状态查询充电桩
+     * @param status 充电桩状态
+     * @return 充电桩列表
+     */
+    @Select("SELECT * FROM charging_pile WHERE status = #{status}")
+    List<ChargingPile> findByStatus(@Param("status") ChargingPileStatus status);
+    
+    /**
+     * 根据类型和状态查询充电桩
+     * @param type 充电桩类型
+     * @param status 充电桩状态
+     * @return 充电桩列表
+     */
+    @Select("SELECT * FROM charging_pile WHERE type = #{type} AND status = #{status}")
+    List<ChargingPile> findByTypeAndStatus(@Param("type") ChargingPileType type, @Param("status") ChargingPileStatus status);
+    
+    // 将请求添加到充电桩队列
+    void addToQueue(@Param("pileId") String pileId, @Param("requestId") Long requestId);
 } 

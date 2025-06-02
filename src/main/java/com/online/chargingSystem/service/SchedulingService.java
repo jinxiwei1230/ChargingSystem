@@ -2,9 +2,14 @@ package com.online.chargingSystem.service;
 
 import com.online.chargingSystem.entity.ChargingRequest;
 import com.online.chargingSystem.entity.enums.ChargingPileType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 
 public interface SchedulingService {
+    // 开启叫号
+    void startCallNumber();
+    // 暂停叫号
+    void stopCallNumber();
 
     // 等候区是否已满，0未满，1满
     boolean isWaitingAreaFull();
@@ -26,4 +31,21 @@ public interface SchedulingService {
     void cancelAndRequeue(Long userId);
     // 取消充电并离开
     void cancel(Long userId);
+
+//    boolean canCallNumber();
+
+    ChargingRequest getNextRequest();
+
+    double calculateWaitingTime(String pileId);
+
+    double calculateChargingTime(ChargingRequest request, String pileId);
+
+    String assignOptimalPile(ChargingRequest request);
+
+    void handleCallNumber();
+
+    // 充电完成处理
+    void handleChargingComplete(Long requestId);
+
+    boolean canCallNumber();
 }
