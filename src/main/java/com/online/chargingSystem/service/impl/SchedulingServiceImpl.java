@@ -423,8 +423,8 @@ public class SchedulingServiceImpl implements SchedulingService {
             
             // 更新请求状态
 //            request.setStatus(CHARGING); chj
-//            request.setChargingPileId(optimalPile);
-//            chargingRequestMapper.update(request);
+            request.setChargingPileId(optimalPile);
+            chargingRequestMapper.update(request);
             
             // 从等候区队列中移除
             queue.poll();
