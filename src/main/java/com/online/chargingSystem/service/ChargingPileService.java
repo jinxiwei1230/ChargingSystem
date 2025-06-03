@@ -46,11 +46,11 @@ public interface ChargingPileService {
 
     /**
      * 开始充电
-     * @param userId 用户ID
+     * @param requestId 充电请求ID
      * @param pileId 充电桩ID
-     * @return 操作结果
+     * @return 是否成功开始充电
      */
-    boolean startCharging(Long userId, String pileId);
+    boolean startCharging(Long requestId, String pileId);
 
     /**
      * 结束充电

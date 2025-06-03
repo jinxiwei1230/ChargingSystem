@@ -6,7 +6,6 @@ import com.online.chargingSystem.entity.enums.ChargingPileStatus;
 import com.online.chargingSystem.entity.enums.ChargingPileType;
 import com.online.chargingSystem.mapper.ChargingPileMapper;
 import com.online.chargingSystem.service.ChargingPileQueueService;
-import com.online.chargingSystem.service.ChargingPileService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -28,8 +27,6 @@ public class ChargingPileQueueServiceImpl implements ChargingPileQueueService, C
     // 所有充电桩的队列
     private final ConcurrentHashMap<String, ChargingPileQueue> pileQueues = new ConcurrentHashMap<>();
     
-    @Autowired
-    private ChargingPileService chargingPileService;
     @Autowired
     private ChargingPileMapper chargingPileMapper;
 
@@ -166,6 +163,19 @@ public class ChargingPileQueueServiceImpl implements ChargingPileQueueService, C
                 });
         
         System.out.println("--- 充电桩队列状态结束 ---\n");
+    }
+
+    //chj
+    @Override
+    public Long getQueueHead(String pileId) {
+        ChargingPileQueue queue = pileQueues.get(pileId);
+        if (queue == null || queue.getQueue().isEmpty()) {
+            System.out.println("该充电桩队列为空！");
+            return null;
+        }
+        System.out.println("充电桩队列：");
+        System.out.println(queue);
+        return queue.getQueue().peek();
     }
 
 } 

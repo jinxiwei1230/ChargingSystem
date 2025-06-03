@@ -422,9 +422,9 @@ public class SchedulingServiceImpl implements SchedulingService {
             }
             
             // 更新请求状态
-            request.setStatus(CHARGING);
-            request.setChargingPileId(optimalPile);
-            chargingRequestMapper.update(request);
+//            request.setStatus(CHARGING); chj
+//            request.setChargingPileId(optimalPile);
+//            chargingRequestMapper.update(request);
             
             // 从等候区队列中移除
             queue.poll();
@@ -433,6 +433,8 @@ public class SchedulingServiceImpl implements SchedulingService {
             chargingPileQueueService.addToQueue(optimalPile, request.getId());
             
             System.out.println("请求 " + request.getId() + " 已分配至充电桩 " + optimalPile + "\n");
+            // TODO:调用开始充电接口
+            chargingPileService.startCharging(request.getId(), optimalPile);
         }
         
         System.out.println((type == FAST ? "快充" : "慢充") + "队列处理完成\n");
@@ -460,6 +462,9 @@ public class SchedulingServiceImpl implements SchedulingService {
         
         // 更新充电桩状态
         chargingPileService.startChargingPile(request.getChargingPileId());
+
+        // TODO:调用结束充电接口
+        chargingPileService.endCharging(request.getUserId(), request.getChargingPileId());
         
         System.out.println("充电完成处理完成");
         System.out.println("当前充电桩队列大小: " + chargingPileQueueService.getQueueSize(request.getChargingPileId()));
