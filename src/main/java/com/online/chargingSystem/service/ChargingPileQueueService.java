@@ -46,9 +46,9 @@ public interface ChargingPileQueueService {
 
     /**
      * chj
-     * 获取指定充电桩队列的队首用户ID
+     * 获取指定充电桩队列的队首请求ID
      * @param pileId 充电桩ID
-     * @return 队首用户ID，如果队列为空则返回null
+     * @return 队首请求ID，如果队列为空则返回null
      */
     Long getQueueHead(String pileId);
 }

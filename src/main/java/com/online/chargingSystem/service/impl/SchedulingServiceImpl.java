@@ -3,8 +3,10 @@ package com.online.chargingSystem.service.impl;
 import com.online.chargingSystem.entity.ChargingRequest;
 import com.online.chargingSystem.entity.User;
 import com.online.chargingSystem.entity.WaitingQueue;
+import com.online.chargingSystem.entity.enums.ChargingPileStatus;
 import com.online.chargingSystem.entity.enums.ChargingPileType;
 import com.online.chargingSystem.entity.enums.RequestStatus;
+import com.online.chargingSystem.mapper.ChargingPileMapper;
 import com.online.chargingSystem.mapper.ChargingRequestMapper;
 import com.online.chargingSystem.mapper.UserMapper;
 import com.online.chargingSystem.service.SchedulingService;
@@ -25,9 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.online.chargingSystem.entity.enums.ChargingPileType.FAST;
 import static com.online.chargingSystem.entity.enums.RequestStatus.WAITING_IN_WAITING_AREA;
-import static com.online.chargingSystem.entity.enums.RequestStatus.CHARGING;
-import static com.online.chargingSystem.entity.enums.RequestStatus.COMPLETED;
-
 @Service
 @EnableScheduling
 public class SchedulingServiceImpl implements SchedulingService {
@@ -42,6 +41,8 @@ public class SchedulingServiceImpl implements SchedulingService {
     private ChargingPileService chargingPileService;
     @Autowired
     private ChargingPileQueueService chargingPileQueueService;
+    @Autowired
+    private ChargingPileMapper chargingPileMapper;
 
     // 是否开启叫号
     private volatile boolean callNumberEnabled = true;
@@ -51,34 +52,116 @@ public class SchedulingServiceImpl implements SchedulingService {
     private final AtomicInteger fastQueueCounter = new AtomicInteger(0);
     private final AtomicInteger slowQueueCounter = new AtomicInteger(0);
 
-    // 获取用户最新一次充电请求
-    private ChargingRequest getLatestRequest(long userId){
-        List<ChargingRequest> request = chargingRequestMapper.findByUserId(userId);
-        if(request.isEmpty()){
-            return null;
+    /**
+     * 定时检查是否可以叫号
+     * 每5秒检查一次
+     */
+    @Scheduled(fixedRate = 5000)
+
+    public void scheduledCallNumber() {
+        try {
+            // 检查是否可以叫号
+            if (callNumberEnabled && canCallNumber()) {
+                System.out.println("\n=== 开始叫号检查 ===");
+                handleCallNumber();
+                System.out.println("=== 叫号检查完成 ===\n");
+            }
+        } catch (Exception e) {
+            System.err.println("叫号过程发生错误: " + e.getMessage());
+            e.printStackTrace();
         }
-        return request.get(request.size() - 1);
     }
 
+    // 叫号逻辑
     @Override
-    public void startCallNumber() {
-        callNumberEnabled = true;
+    @Transactional
+    public void handleCallNumber() {
+        // 检查是否可以叫号
+        if (!(callNumberEnabled && canCallNumber())) {
+            return;
+        }
+
+        System.out.println("\n=== 开始批量叫号 ===");
+        printWaitingQueues();
+
+        // 处理快充队列
+        processQueue(waitingQueue.getFastQueue(), ChargingPileType.FAST);
+
+        // 处理慢充队列
+        processQueue(waitingQueue.getSlowQueue(), ChargingPileType.SLOW);
+
+        System.out.println("=== 批量叫号完成 ===");
+
+        chargingPileQueueService.printPileQueues();
     }
 
+    // 判断是否能叫号
     @Override
-    public void stopCallNumber() {
-        callNumberEnabled = false;
+    public boolean canCallNumber() {
+        // 检查是否有充电桩故障
+        List<String> faultPiles = chargingPileQueueService.getFaultPiles();
+        if (!faultPiles.isEmpty()) {
+            System.out.println("存在故障充电桩，无法叫号。故障充电桩: " + faultPiles);
+            return false;
+        }
+
+        // 检查充电区是否有空位
+        boolean hasAvailable = chargingPileQueueService.hasPileVacancy();
+        if (!hasAvailable) {
+            System.out.println("充电区已满，无法叫号");
+        }
+        return hasAvailable;
     }
 
-    @Override
-    public boolean isWaitingAreaFull() {
-        return waitingQueue.getFastQueue().size() + waitingQueue.getSlowQueue().size() >= 6;
-    }
+    // 处理指定类型的等待队列
+    @Transactional
+    protected void processQueue(Queue<Long> queue, ChargingPileType type) {
+        System.out.println("处理" + (type == FAST ? "快充" : "慢充") + "队列...");
 
-    @Override
-    public boolean isRequestAmountValid(Long userId, Double requestAmount) {
-        User user = userMapper.selectById(userId);
-        return requestAmount > 0 && requestAmount <= user.getBatteryCapacity();
+        while (!queue.isEmpty()) {
+            // 获取队列中的第一个请求
+            Long requestId = queue.peek();
+            ChargingRequest request = chargingRequestMapper.findById(requestId);
+            if (request == null) {
+                queue.poll(); // 移除无效请求
+                continue;
+            }
+
+            // 获取可用充电桩
+            List<String> availablePiles = chargingPileQueueService.getAvailableAndInUsePiles(type);
+            if (availablePiles.isEmpty()) {
+                System.out.println("没有可用的" + (type == FAST ? "快充" : "慢充") + "充电桩，停止处理");
+                break;
+            }
+
+            // 为请求分配最优充电桩
+            String optimalPileId = assignOptimalPile(request);
+            if (optimalPileId == null) {
+                System.out.println("无法为请求 " + requestId + " 分配充电桩，停止处理");
+                break;
+            }
+
+            // 从等候区队列中移除
+            queue.poll();
+
+            // 将请求添加到充电桩队列
+            chargingPileQueueService.addToQueue(optimalPileId, requestId);
+
+            // 更新请求信息
+            request.setChargingPileId(optimalPileId);
+            request.setStatus(RequestStatus.WAITING_IN_CHARGING_AREA);
+            chargingRequestMapper.update(request);
+
+            System.out.println("请求 " + requestId + " 已分配至充电桩 " + optimalPileId + "\n");
+
+            // 如果充电桩空闲，直接开始充电
+            if(chargingPileMapper.findById(optimalPileId).getStatus() == ChargingPileStatus.AVAILABLE){
+                chargingPileService.startCharging(requestId, optimalPileId);
+            }
+
+        }
+
+        System.out.println((type == FAST ? "快充" : "慢充") + "队列处理完成\n");
     }
 
     // 处理充电请求
@@ -93,11 +176,11 @@ public class SchedulingServiceImpl implements SchedulingService {
         request.setStatus(WAITING_IN_WAITING_AREA);
         request.setRequestTime(LocalDateTime.now());
         request.setQueueJoinTime(LocalDateTime.now());
-        
+
         // 生成排队号码
         String queueNumber = generateQueueNumber(mode);
         request.setQueueNumber(queueNumber);
-        
+
         // 保存充电请求
         chargingRequestMapper.insert(request);
 
@@ -115,19 +198,34 @@ public class SchedulingServiceImpl implements SchedulingService {
         return request;
     }
 
-    /**
-     * 生成排队号码
-     * @param mode 充电模式（FAST/SLOW）
-     * @return 排队号码（F1/T1格式）
-     */
-    private String generateQueueNumber(ChargingPileType mode) {
-        switch (mode){
-            case FAST:
-                return "F" + fastQueueCounter.incrementAndGet();
-            case SLOW:
-                return "T" + slowQueueCounter.incrementAndGet();
+    // 获取用户最新一次充电请求
+    private ChargingRequest getLatestRequest(long userId){
+        List<ChargingRequest> request = chargingRequestMapper.findByUserId(userId);
+        if(request.isEmpty()){
+            return null;
         }
-        return null;
+        return request.get(request.size() - 1);
+    }
+
+    // 等候区是否已满，0未满，1满
+    @Override
+    public boolean isWaitingAreaFull() {
+        return waitingQueue.getFastQueue().size() + waitingQueue.getSlowQueue().size() >= 6;
+    }
+
+    // 请求充电量是否合理，0不合理，1合理
+    @Override
+    public boolean isRequestAmountValid(Long userId, Double requestAmount) {
+        User user = userMapper.selectById(userId);
+        return requestAmount > 0 && requestAmount <= user.getBatteryCapacity();
+    }
+
+    // 生成排队号码
+    private String generateQueueNumber(ChargingPileType mode) {
+        return switch (mode) {
+            case FAST -> "F" + fastQueueCounter.incrementAndGet();
+            case SLOW -> "T" + slowQueueCounter.incrementAndGet();
+        };
     }
 
     // 获取排队号码
@@ -138,27 +236,49 @@ public class SchedulingServiceImpl implements SchedulingService {
         return request.getQueueNumber();
     }
 
+    // 获取本充电模式下前车等待数量
     @Override
     public int getAheadNumber(Long userId) {
         ChargingRequest request = getLatestRequest(userId);
         assert request != null;
-        
+
         // 获取对应的等待队列
         Queue<Long> targetQueue = request.getMode() == ChargingPileType.FAST ? 
             waitingQueue.getFastQueue() : waitingQueue.getSlowQueue();
-            
-        // 计算前车数量
-        int aheadCount = 0;
-        for (Long requestId : targetQueue) {
-            if (requestId.equals(request.getId())) {
-                break;
+
+        switch (request.getStatus()){
+            case WAITING_IN_WAITING_AREA:{
+                // 计算等候区前车数量
+                int waitingAreaCount = 0;
+                for (Long requestId : targetQueue) {
+                    if (requestId.equals(request.getId())) {
+                        break;
+                    }
+                    waitingAreaCount++;
+                }
+
+                // 计算充电区等待车辆数量
+                int chargingAreaCount = 0;
+                List<String> piles = chargingPileQueueService.getAvailableAndInUsePiles(request.getMode());
+                for (String pileId : piles) {
+                    Queue<Long> pileQueue = chargingPileQueueService.getQueueRequests(pileId);
+                    if (pileQueue != null && !pileQueue.isEmpty()) {
+                        chargingAreaCount += pileQueue.size() - 1;
+                    }
+                }
+
+                return waitingAreaCount + chargingAreaCount;
             }
-            aheadCount++;
+            case WAITING_IN_CHARGING_AREA:{
+                return 1;
+            }
+            default:{
+                return 0;
+            }
         }
-        
-        return aheadCount;
     }
 
+    // 修改充电模式
     @Override
     @Transactional
     public void modifyChargingMode(Long userId, ChargingPileType mode) {
@@ -181,11 +301,14 @@ public class SchedulingServiceImpl implements SchedulingService {
                 moveToAnotherQueue(fastQueue, slowQueue, request.getId());
                 break;
         }
+
         // 查看队列状态
         printWaitingQueues();
     }
 
+    // 修改充电量
     @Override
+    @Transactional
     public void modifyChargingAmount(Long userId, Double requestAmount) {
         ChargingRequest request = getLatestRequest(userId);
         assert request != null;
@@ -193,8 +316,10 @@ public class SchedulingServiceImpl implements SchedulingService {
         chargingRequestMapper.update(request);
     }
 
+    // 将请求移动到另一个队列
     // queue2是target queue
-    private static void moveToAnotherQueue(Queue<Long> queue1, Queue<Long> queue2, long target) {
+    @Transactional
+    protected void moveToAnotherQueue(Queue<Long> queue1, Queue<Long> queue2, long target) {
         // 创建一个临时队列用于存储非目标元素
         Queue<Long> tempQueue = new LinkedList<>();
         while (!queue1.isEmpty()) {
@@ -211,14 +336,7 @@ public class SchedulingServiceImpl implements SchedulingService {
         }
     }
 
-
-    @Override
-    public boolean isInWaitingArea(Long userId) {
-        ChargingRequest request = getLatestRequest(userId);
-        assert request != null;
-        return request.getStatus() == WAITING_IN_WAITING_AREA;
-    }
-
+    // 取消充电并回到等候区重新排队
     @Override
     @Transactional
     public void cancelAndRequeue(Long userId) {
@@ -236,6 +354,7 @@ public class SchedulingServiceImpl implements SchedulingService {
         printWaitingQueues();
     }
 
+    // 取消充电并离开
     @Override
     @Transactional
     public void cancel(Long userId) {
@@ -256,50 +375,40 @@ public class SchedulingServiceImpl implements SchedulingService {
         chargingRequestMapper.update(request);
     }
 
-
-    // 辅助方法：从等候区和所有充电区队列移除
-    private void removeFromAllQueues(Long requestId, ChargingPileType mode) {
-        // 1. 等候区
-        waitingQueue.getFastQueue().remove(requestId);
-        waitingQueue.getSlowQueue().remove(requestId);
-        // 2. 充电区（如有统一管理类可遍历所有充电桩队列，这里假设无，留接口）
-        // TODO: 如果有充电区队列管理类，在此补充遍历所有充电桩队列并remove(requestId)
-    }
-
-    // 调试用：打印当前等待区队列
-    private void printWaitingQueues(){
-        Queue<Long> fastQueue = waitingQueue.getFastQueue();
-        Queue<Long> slowQueue = waitingQueue.getSlowQueue();
-        System.out.println("快队列: " + fastQueue);
-        System.out.println("慢队列: " + slowQueue);
-    }
-
+    // 充电完成处理
     @Override
-    public ChargingRequest getNextRequest() {
-        // 获取快充和慢充队列的第一个请求
-        Long fastRequestId = waitingQueue.getFastQueue().peek();
-        Long slowRequestId = waitingQueue.getSlowQueue().peek();
-        
-        System.out.println("当前等待队列状态：");
-        printWaitingQueues();
-        
-        if (fastRequestId == null && slowRequestId == null) {
-            System.out.println("等待队列为空，没有需要叫号的请求");
-            return null;
+    @Transactional
+    public boolean handleChargingComplete(Long userId) {
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+        long requestId = request.getId();
+        String pileId = request.getChargingPileId();
+
+        System.out.println("处理充电完成请求: " + requestId);
+        System.out.println("充电桩: " + pileId);
+
+        // 调用结束充电接口
+        if(!chargingPileService.endCharging(request.getUserId(), pileId)){
+            return false;
         }
-        
-        // 优先处理快充请求
-        if (fastRequestId != null) {
-            ChargingRequest request = chargingRequestMapper.findById(fastRequestId);
-            System.out.println("准备叫号快充请求: " + request.getId() + ", 排队号: " + request.getQueueNumber());
-            return request;
+
+        // 从充电桩队列中移除
+        chargingPileQueueService.removeFromQueue(pileId, requestId);
+
+        System.out.println("充电完成处理完成");
+        int currentQueueSize = chargingPileQueueService.getQueueSize(pileId);
+        System.out.println("当前充电桩队列大小: " + currentQueueSize);
+
+        // 队列不为空，则下一个请求开始充电
+        if(currentQueueSize > 0){
+            long nextRequestId = chargingPileQueueService.getQueueHead(pileId);
+            chargingPileService.startCharging(nextRequestId, pileId);
         }
-        
-        ChargingRequest request = chargingRequestMapper.findById(slowRequestId);
-        System.out.println("准备叫号慢充请求: " + request.getId() + ", 排队号: " + request.getQueueNumber());
-        return request;
+
+        return true;
     }
 
+    // 计算等候时间
     @Override
     public double calculateWaitingTime(String pileId) {
         // 获取充电桩队列中的所有请求
@@ -316,6 +425,7 @@ public class SchedulingServiceImpl implements SchedulingService {
                 .sum();
     }
 
+    // 计算充电时间
     @Override
     public double calculateChargingTime(ChargingRequest request, String pileId) {
         // 获取充电桩功率
@@ -325,9 +435,9 @@ public class SchedulingServiceImpl implements SchedulingService {
         return request.getAmount() / chargingPower;
     }
 
+    // 选择最优充电桩
     @Override
     public String assignOptimalPile(ChargingRequest request) {
-        printWaitingQueues();
         System.out.println("- 处理充电请求 " + request.getId() + " ...");
         // 获取所有可用的充电桩
         List<String> availablePiles = chargingPileQueueService.getAvailableAndInUsePiles(request.getMode());
@@ -340,7 +450,7 @@ public class SchedulingServiceImpl implements SchedulingService {
         }
         
         // 计算每个充电桩的总时间（等待时间 + 充电时间）
-        String optimalPile = null;
+        String optimalPileId = null;
         double minTotalTime = Double.MAX_VALUE;
         
         for (String pileId : availablePiles) {
@@ -358,152 +468,50 @@ public class SchedulingServiceImpl implements SchedulingService {
             
             if (totalTime < minTotalTime) {
                 minTotalTime = totalTime;
-                optimalPile = pileId;
+                optimalPileId = pileId;
             }
         }
         
-        if (optimalPile != null) {
-            System.out.println("选择最优充电桩: " + optimalPile + ", 预计总时间: " + minTotalTime + "小时");
+        if (optimalPileId != null) {
+            System.out.println("选择最优充电桩: " + optimalPileId + ", 预计总时间: " + minTotalTime + "小时");
         }
         
-        return optimalPile;
+        return optimalPileId;
     }
 
+    // 调试用：打印当前等待区队列
+    private void printWaitingQueues(){
+        Queue<Long> fastQueue = waitingQueue.getFastQueue();
+        Queue<Long> slowQueue = waitingQueue.getSlowQueue();
+        System.out.println("快队列: " + fastQueue);
+        System.out.println("慢队列: " + slowQueue);
+    }
+
+    // 判断是否在等候区
     @Override
-    @Transactional
-    public void handleCallNumber() {
-        // 检查是否可以叫号
-        if (!(callNumberEnabled && canCallNumber())) {
-            return;
-        }
-        
-        System.out.println("\n=== 开始批量叫号 ===");
-        
-        // 处理快充队列
-        processQueue(waitingQueue.getFastQueue(), ChargingPileType.FAST);
-        
-        // 处理慢充队列
-        processQueue(waitingQueue.getSlowQueue(), ChargingPileType.SLOW);
-        
-        System.out.println("=== 批量叫号完成 ===");
+    public boolean isInWaitingArea(Long userId) {
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+        return request.getStatus() == RequestStatus.WAITING_IN_WAITING_AREA;
+    }
 
-        chargingPileQueueService.printPileQueues();
-    }
-    
-    /**
-     * 处理指定类型的等待队列
-     * @param queue 等待队列
-     * @param type 充电桩类型
-     */
-    private void processQueue(Queue<Long> queue, ChargingPileType type) {
-        System.out.println("处理" + (type == FAST ? "快充" : "慢充") + "队列...");
-        
-        while (!queue.isEmpty()) {
-            // 获取队列中的第一个请求
-            Long requestId = queue.peek();
-            ChargingRequest request = chargingRequestMapper.findById(requestId);
-            if (request == null) {
-                queue.poll(); // 移除无效请求
-                continue;
-            }
-            
-            // 获取可用充电桩
-            List<String> availablePiles = chargingPileQueueService.getAvailableAndInUsePiles(type);
-            if (availablePiles.isEmpty()) {
-                System.out.println("没有可用的" + (type == FAST ? "快充" : "慢充") + "充电桩，停止处理");
-                break;
-            }
-            
-            // 为请求分配最优充电桩
-            String optimalPile = assignOptimalPile(request);
-            if (optimalPile == null) {
-                System.out.println("无法为请求 " + request.getId() + " 分配充电桩，停止处理");
-                break;
-            }
-            
-            // 更新请求状态
-//            request.setStatus(CHARGING); chj
-//            request.setChargingPileId(optimalPile);
-//            chargingRequestMapper.update(request);
-            
-            // 从等候区队列中移除
-            queue.poll();
-            
-            // 将请求添加到充电桩队列
-            chargingPileQueueService.addToQueue(optimalPile, request.getId());
-            
-            System.out.println("请求 " + request.getId() + " 已分配至充电桩 " + optimalPile + "\n");
-            // TODO:调用开始充电接口
-            chargingPileService.startCharging(request.getId(), optimalPile);
-        }
-        
-        System.out.println((type == FAST ? "快充" : "慢充") + "队列处理完成\n");
-    }
-    
-    // 充电完成处理
+    // 判断是否在充电等候区
     @Override
-    @Transactional
-    public void handleChargingComplete(Long requestId) {
-        ChargingRequest request = chargingRequestMapper.findById(requestId);
-        if (request == null) {
-            System.out.println("未找到请求: " + requestId);
-            return;
-        }
-        
-        System.out.println("处理充电完成请求: " + requestId);
-        System.out.println("充电桩: " + request.getChargingPileId());
-        
-        // 更新请求状态为已完成
-        request.setStatus(COMPLETED);
-        chargingRequestMapper.update(request);
-        
-        // 从充电桩队列中移除
-        chargingPileQueueService.removeFromQueue(request.getChargingPileId(), requestId);
-        
-        // 更新充电桩状态
-        chargingPileService.startChargingPile(request.getChargingPileId());
-
-        // TODO:调用结束充电接口
-        chargingPileService.endCharging(request.getUserId(), request.getChargingPileId());
-        
-        System.out.println("充电完成处理完成");
-        System.out.println("当前充电桩队列大小: " + chargingPileQueueService.getQueueSize(request.getChargingPileId()));
+    public boolean isInChargingArea(Long userId) {
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+        return request.getStatus() == RequestStatus.WAITING_IN_CHARGING_AREA;
     }
 
-    /**
-     * 定时检查是否可以叫号
-     * 每5秒检查一次
-     */
-    @Scheduled(fixedRate = 5000)
-
-    public void scheduledCallNumber() {
-        try {
-            // 检查是否可以叫号
-            if (callNumberEnabled && canCallNumber()) {
-                System.out.println("\n=== 开始叫号检查 ===");
-                handleCallNumber();
-                System.out.println("=== 叫号检查完成 ===\n");
-            }
-        } catch (Exception e) {
-            System.err.println("叫号过程发生错误: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
+    // 开启叫号
     @Override
-    public boolean canCallNumber() {
-        // 检查是否有充电桩故障
-        List<String> faultPiles = chargingPileQueueService.getFaultPiles();
-        if (!faultPiles.isEmpty()) {
-            System.out.println("存在故障充电桩，无法叫号。故障充电桩: " + faultPiles);
-            return false;
-        }
+    public void startCallNumber() {
+        callNumberEnabled = true;
+    }
 
-        // 检查充电区是否有空位
-        boolean hasAvailable = chargingPileQueueService.hasPileVacancy();
-        if (!hasAvailable) {
-            System.out.println("充电区已满，无法叫号");
-        }
-        return hasAvailable;
+    // 停止叫号
+    @Override
+    public void stopCallNumber() {
+        callNumberEnabled = false;
     }
 } 

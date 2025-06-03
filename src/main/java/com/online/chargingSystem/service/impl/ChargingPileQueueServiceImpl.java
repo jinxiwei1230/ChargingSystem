@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @Service
 public class ChargingPileQueueServiceImpl implements ChargingPileQueueService, CommandLineRunner {
     // 所有充电桩的队列
-    private final ConcurrentHashMap<String, ChargingPileQueue> pileQueues = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, ChargingPileQueue> pileQueues = new ConcurrentHashMap<>();
     
     @Autowired
     private ChargingPileMapper chargingPileMapper;
