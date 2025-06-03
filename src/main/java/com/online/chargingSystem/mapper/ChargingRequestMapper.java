@@ -36,4 +36,7 @@ public interface ChargingRequestMapper {
 
     // 根据充电桩ID查找请求
     List<ChargingRequest> findByPileId(@Param("pileId") String pileId);
+
+    // 根据用户ID和状态查找充电请求
+    ChargingRequest findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") String status);
 } 

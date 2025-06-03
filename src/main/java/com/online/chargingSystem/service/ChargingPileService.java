@@ -2,6 +2,9 @@ package com.online.chargingSystem.service;
 
 import com.online.chargingSystem.entity.ChargingPile;
 import com.online.chargingSystem.entity.enums.ChargingPileStatus;
+import com.online.chargingSystem.dto.ChargingPileQueueDTO;
+import java.util.List;
+import java.util.Map;
 
 public interface ChargingPileService {
     // 获取充电桩状态
@@ -27,4 +30,33 @@ public interface ChargingPileService {
 
     // 查询充电桩状态
     ChargingPile queryPileState(String pileId);
+
+    /**
+     * 获取指定充电桩的等候队列信息
+     * @param pileId 充电桩ID
+     * @return 等候队列信息列表
+     */
+    List<ChargingPileQueueDTO> getPileQueueInfo(String pileId);
+
+    /**
+     * 获取所有充电桩的等候队列信息
+     * @return 所有充电桩的等候队列信息
+     */
+    Map<String, List<ChargingPileQueueDTO>> getAllPileQueueInfo();
+
+    /**
+     * 开始充电
+     * @param requestId 充电请求ID
+     * @param pileId 充电桩ID
+     * @return 是否成功开始充电
+     */
+    boolean startCharging(Long requestId, String pileId);
+
+    /**
+     * 结束充电
+     * @param userId 用户ID
+     * @param pileId 充电桩ID
+     * @return 操作结果
+     */
+    boolean endCharging(Long userId, String pileId);
 } 

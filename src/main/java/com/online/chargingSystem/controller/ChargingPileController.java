@@ -6,6 +6,10 @@ import com.online.chargingSystem.service.ChargingPileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import lombok.Data;
+import com.online.chargingSystem.dto.ChargingPileQueueDTO;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 充电桩控制器
@@ -104,6 +108,53 @@ public class ChargingPileController {
     public Result<?> queryPileState(@RequestParam String pileId) {
         ChargingPile result = chargingPileService.queryPileState(pileId);
         return result != null ? Result.success(result) : Result.error("查询失败");
+    }
+
+    /**
+     * 获取所有充电桩的等候队列信息
+     * @return 所有充电桩的等候队列信息
+     */
+    @GetMapping("/queue-info")
+    public Result<Map<String, List<ChargingPileQueueDTO>>> getAllPileQueueInfo() {
+        Map<String, List<ChargingPileQueueDTO>> result = chargingPileService.getAllPileQueueInfo();
+        return Result.success(result);
+    }
+
+    /**
+     * 获取指定充电桩的等候队列信息
+     * @param pileId 充电桩ID
+     * @return 指定充电桩的等候队列信息
+     */
+    @GetMapping("/{pileId}/queue-info")
+    public Result<List<ChargingPileQueueDTO>> getPileQueueInfo(@PathVariable String pileId) {
+        List<ChargingPileQueueDTO> result = chargingPileService.getPileQueueInfo(pileId);
+        return Result.success(result);
+    }
+
+    /**
+     * 开始充电（队列头+空闲充电桩）
+     * @param userId 用户ID
+     * @param pileId 充电桩ID
+     * @return 操作结果
+     */
+    @PostMapping("/charging/start")
+    public Result<?> startCharging(@RequestParam Long userId,
+                                  @RequestParam String pileId) {
+        boolean result = chargingPileService.startCharging(userId, pileId);
+        return result ? Result.success("开始充电成功") : Result.error("开始充电失败");
+    }
+
+    /**
+     * 结束充电（让充电桩空闲、生成详单、订单）
+     * @param userId 用户ID
+     * @param pileId 充电桩ID
+     * @return 操作结果
+     */
+    @PostMapping("/charging/end")
+    public Result<?> endCharging(@RequestParam Long userId,
+                                @RequestParam String pileId) {
+        boolean result = chargingPileService.endCharging(userId, pileId);
+        return result ? Result.success("结束充电成功") : Result.error("结束充电失败");
     }
 }
 

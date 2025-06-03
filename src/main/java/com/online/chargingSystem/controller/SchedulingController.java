@@ -77,6 +77,9 @@ public class SchedulingController {
     // 取消充电并回到等候区重新排队
     @RequestMapping("/cancelAndRequeue")
     public Result<?> cancelAndRequeue(@RequestParam Long userId) {
+        if (!(schedulingService.isInWaitingArea(userId) || schedulingService.isInChargingArea(userId))) {
+            return Result.error("车辆不在等候状态，无法取消充电");
+        }
         schedulingService.cancelAndRequeue(userId);
         return Result.success("取消充电并重新排队成功");
     }
@@ -84,10 +87,18 @@ public class SchedulingController {
     // 取消充电并离开
     @RequestMapping("/cancelAndLeave")
     public Result<?> cancelAndLeave(@RequestParam Long userId) {
+        if (!(schedulingService.isInWaitingArea(userId) || schedulingService.isInChargingArea(userId))) {
+            return Result.error("车辆不在等候状态，无法取消充电");
+        }
         schedulingService.cancel(userId);
         return Result.success("取消充电并离开成功");
     }
 
-
+    // 结束充电
+    @RequestMapping("/finish")
+    public Result<?> finish(@RequestParam Long userId) {
+        boolean result = schedulingService.handleChargingComplete(userId);
+        return result ? Result.success("结束充电成功") : Result.error("结束充电失败");
+    }
 
 }
