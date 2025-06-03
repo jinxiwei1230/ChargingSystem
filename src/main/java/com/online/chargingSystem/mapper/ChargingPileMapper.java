@@ -1,12 +1,9 @@
 package com.online.chargingSystem.mapper;
 
 import com.online.chargingSystem.entity.ChargingPile;
-<<<<<<< HEAD
 import com.online.chargingSystem.entity.enums.ChargingPileStatus;
 import com.online.chargingSystem.entity.enums.ChargingPileType;
-=======
 import com.online.chargingSystem.dto.ChargingPileQueueDTO;
->>>>>>> main
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;

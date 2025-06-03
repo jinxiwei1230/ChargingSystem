@@ -15,6 +15,7 @@ import com.online.chargingSystem.mapper.ChargingRequestMapper;
 import com.online.chargingSystem.mapper.ChargingOrderMapper;
 import com.online.chargingSystem.mapper.ChargingDetailMapper;
 import com.online.chargingSystem.service.ChargingPileService;
+import com.online.chargingSystem.service.ChargingPileQueueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,9 @@ public class ChargingPileServiceImpl implements ChargingPileService {
 
     @Autowired
     private ChargingDetailMapper chargingDetailMapper;
+
+    @Autowired
+    private ChargingPileQueueService chargingPileQueueService;
 
     @Override
     public ChargingPile getPileStatus(String pileId) {
@@ -135,25 +139,33 @@ public class ChargingPileServiceImpl implements ChargingPileService {
 
     @Override
     @Transactional
-    public boolean startCharging(Long userId, String pileId) {
+    public boolean startCharging(Long requestId, String pileId) {
         // 1. 检查充电桩状态
         ChargingPile pile = chargingPileMapper.findById(pileId);
         if (pile == null || pile.getStatus() != ChargingPileStatus.AVAILABLE) {
             return false;
         }
+        System.out.println("充电桩状态：" + pile.getStatus());
+        System.out.println("111111111111111111111111");
 
-        // 2. 检查用户是否在等候区队列头
-        List<ChargingPileQueueDTO> queueInfo = chargingPileMapper.findPileQueueInfo(pileId);
-        if (queueInfo.isEmpty() || !queueInfo.get(0).getUserId().equals(userId)) {
+        // 2. 检查用户是否在充电区队列头
+        Long queueHead = chargingPileQueueService.getQueueHead(pileId);
+        System.out.println(queueHead);
+        System.out.println(requestId);
+        if (queueHead == null || !queueHead.equals(requestId)) {
+            System.out.println("00000000000000000000");
             return false;
         }
+        System.out.println("用户在充电区队列头：" + requestId);
 
         // 3. 更新充电桩状态为使用中
         pile.setStatus(ChargingPileStatus.IN_USE);
+        System.out.println("222222222222");
+        System.out.println(pile);
         chargingPileMapper.update(pile);
 
         // 4. 更新充电请求状态为充电中
-        ChargingRequest request = chargingRequestMapper.findByUserIdAndStatus(userId, "WAITING_IN_CHARGING_AREA");
+        ChargingRequest request = chargingRequestMapper.findById(requestId);
         if (request != null) {
             request.setStatus(RequestStatus.CHARGING);
             request.setChargingPileId(pileId);
@@ -172,16 +184,19 @@ public class ChargingPileServiceImpl implements ChargingPileService {
         if (pile == null || pile.getStatus() != ChargingPileStatus.IN_USE) {
             return false;
         }
+        System.out.println("充电桩状态：" + pile.getStatus());
 
         // 2. 更新充电桩状态为空闲
         pile.setStatus(ChargingPileStatus.AVAILABLE);
         chargingPileMapper.update(pile);
+        System.out.println("充电桩状态更新为：" + pile.getStatus());
 
         // 3. 更新充电请求状态为已完成
         ChargingRequest request = chargingRequestMapper.findByUserIdAndStatus(userId, "CHARGING");
         if (request != null) {
             request.setStatus(RequestStatus.COMPLETED);
             chargingRequestMapper.update(request);
+            System.out.println("充电请求状态更新为：" + request.getStatus());
 
             // 4. 生成充电订单
             ChargingOrder order = new ChargingOrder();
