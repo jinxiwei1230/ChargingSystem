@@ -10,10 +10,7 @@ import com.online.chargingSystem.entity.enums.RequestStatus;
 import com.online.chargingSystem.entity.enums.OrderStatus;
 import com.online.chargingSystem.entity.enums.PeriodType;
 import com.online.chargingSystem.dto.ChargingPileQueueDTO;
-import com.online.chargingSystem.mapper.ChargingPileMapper;
-import com.online.chargingSystem.mapper.ChargingRequestMapper;
-import com.online.chargingSystem.mapper.ChargingOrderMapper;
-import com.online.chargingSystem.mapper.ChargingDetailMapper;
+import com.online.chargingSystem.mapper.*;
 import com.online.chargingSystem.service.ChargingPileService;
 import com.online.chargingSystem.service.ChargingPileQueueService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +41,9 @@ public class ChargingPileServiceImpl implements ChargingPileService {
 
     @Autowired
     private ChargingOrderMapper chargingOrderMapper;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @Autowired
     private ChargingDetailMapper chargingDetailMapper;
@@ -168,7 +168,7 @@ public class ChargingPileServiceImpl implements ChargingPileService {
         ChargingRequest request = chargingRequestMapper.findById(requestId);
         if (request != null) {
             request.setStatus(RequestStatus.CHARGING);
-            request.setChargingPileId(pileId);
+//            request.setChargingPileId(pileId); cly
             chargingRequestMapper.update(request);
         }
 
@@ -202,6 +202,8 @@ public class ChargingPileServiceImpl implements ChargingPileService {
             ChargingOrder order = new ChargingOrder();
             order.setOrderId(generateOrderId());
             order.setUserId(userId);
+            // 添加插入car_id -cly
+            order.setCarId(userMapper.selectById(userId).getCarNumber());
             order.setRequestId(request.getId());
             order.setPileId(pileId);
             order.setOrderDate(LocalDate.now());
