@@ -1,54 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.online.chargingSystem.mapper.ChargingDetailMapper">
-    
-    <!-- 批量插入充电详单 -->
-    <insert id="batchInsert" parameterType="java.util.List">
+    <resultMap id="BaseResultMap" type="com.online.chargingSystem.entity.ChargingDetail">
+        <id column="detail_id" property="detailId"/>
+        <result column="order_id" property="orderId"/>
+        <result column="period_seq" property="periodSeq"/>
+        <result column="period_type" property="periodType"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="duration" property="duration"/>
+        <result column="kwh" property="kwh"/>
+        <result column="charge_rate" property="chargeRate"/>
+        <result column="service_rate" property="serviceRate"/>
+        <result column="charge_fee" property="chargeFee"/>
+        <result column="service_fee" property="serviceFee"/>
+        <result column="sub_total" property="subTotal"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingDetail" useGeneratedKeys="true" keyProperty="detailId">
         INSERT INTO charging_detail (
-            order_id,
-            period_seq,
-            period_type,
-            start_time,
-            end_time,
-            duration,
-            kwh,
-            charge_rate,
-            service_rate
-        ) VALUES 
-        <foreach collection="details" item="detail" separator=",">
-            (
-                #{detail.orderId},
-                #{detail.periodSeq},
-                #{detail.periodType},
-                #{detail.startTime},
-                #{detail.endTime},
-                #{detail.duration},
-                #{detail.kwh},
-                #{detail.chargeRate},
-                #{detail.serviceRate}
-            )
-        </foreach>
+            order_id, period_seq, period_type, start_time, end_time,
+            duration, kwh, charge_rate, service_rate
+        ) VALUES (
+            #{orderId}, #{periodSeq}, #{periodType}, #{startTime}, #{endTime},
+            #{duration}, #{kwh}, #{chargeRate}, #{serviceRate}
+        )
     </insert>
-    
-    <!-- 根据订单ID查询充电详单 -->
-    <select id="findByOrderId" resultType="com.online.chargingSystem.entity.ChargingDetail">
-        SELECT 
-            detail_id,
-            order_id,
-            period_seq,
-            period_type,
-            start_time,
-            end_time,
-            duration,
-            kwh,
-            charge_rate,
-            service_rate,
-            charge_fee,
-            service_fee,
-            sub_total
+
+    <select id="findByOrderId" resultMap="BaseResultMap">
+        SELECT *
         FROM charging_detail
         WHERE order_id = #{orderId}
         ORDER BY period_seq
+    </select>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT d.*
+        FROM charging_detail d
+        JOIN charging_order o ON d.order_id = o.order_id
+        WHERE o.user_id = #{userId}
+        ORDER BY d.start_time DESC
+    </select>
+
+    <select id="findByUserIdAndDate" resultMap="BaseResultMap">
+        SELECT d.*
+        FROM charging_detail d
+        JOIN charging_order o ON d.order_id = o.order_id
+        WHERE o.user_id = #{userId}
+        AND DATE(d.start_time) = #{date}
+        ORDER BY d.start_time DESC
+    </select>
+
+    <select id="findByPileIdAndDate" resultMap="BaseResultMap">
+        SELECT d.*
+        FROM charging_detail d
+        JOIN charging_order o ON d.order_id = o.order_id
+        WHERE o.pile_id = #{pileId}
+        AND DATE(d.start_time) = #{date}
+        ORDER BY d.start_time DESC
     </select>
     
     <!-- 根据订单ID删除充电详单 -->

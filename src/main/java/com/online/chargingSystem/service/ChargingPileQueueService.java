@@ -43,4 +43,12 @@ public interface ChargingPileQueueService {
      * 打印所有充电桩队列的状态
      */
     void printPileQueues();
+
+    /**
+     * chj
+     * 获取指定充电桩队列的队首请求ID
+     * @param pileId 充电桩ID
+     * @return 队首请求ID，如果队列为空则返回null
+     */
+    Long getQueueHead(String pileId);
 }
