@@ -75,7 +75,8 @@ public class SchedulingServiceImpl implements SchedulingService {
         // 生成排队号码
         String queueNumber = generateQueueNumber(mode);
         request.setQueueNumber(queueNumber);
-
+        System.out.println("充电请求：=======================");
+        System.out.println(request);
         // 保存充电请求
         chargingRequestMapper.insert(request);
 
