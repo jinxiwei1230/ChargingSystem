@@ -3,6 +3,10 @@ package com.online.chargingSystem.service;
 import com.online.chargingSystem.entity.ChargingRequest;
 import com.online.chargingSystem.entity.enums.ChargingPileType;
 
+import java.util.Queue;
+import java.util.List;
+import java.util.Map;
+
 public interface SchedulingService {
     /**
      * 处理充电请求
@@ -121,6 +125,9 @@ public interface SchedulingService {
      */
     boolean isInChargingArea(Long userId);
 
+    // 判断是否在充电
+    boolean isCharging(Long userId);
+
     /**
      * 开启叫号
      */
@@ -130,4 +137,19 @@ public interface SchedulingService {
      * 停止叫号
      */
     void stopCallNumber();
+
+    boolean processQueue(Queue<Long> faultQueue, ChargingPileType pileType);
+
+    /**
+     * 获取等候区队列
+     * @return 按请求ID排序的等候区请求列表
+     */
+    List<ChargingRequest> getWaitingAreaQueue();
+
+    /**
+     * 获取所有充电桩队列
+     * @return 充电桩ID和对应队列的映射
+     */
+    Map<String, List<ChargingRequest>> getAllPileQueues();
+
 }

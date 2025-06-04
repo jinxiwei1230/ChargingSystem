@@ -149,7 +149,7 @@ public class SchedulingServiceImpl implements SchedulingService {
 
     // 处理指定类型的等待队列
     @Transactional
-    protected boolean processQueue(Queue<Long> queue, ChargingPileType type) {
+    public boolean processQueue(Queue<Long> queue, ChargingPileType type) {
         System.out.println("处理" + (type == FAST ? "快充" : "慢充") + "队列...");
 
         boolean allRequestsProcessed = false;  // 该队列中的请求是否都调度完毕
@@ -409,6 +409,7 @@ public class SchedulingServiceImpl implements SchedulingService {
         // 队列不为空，则下一个请求开始充电
         if(currentQueueSize > 0){
             long nextRequestId = chargingPileQueueService.getQueueHead(pileId);
+            System.out.println("下一个请求：" + nextRequestId);
             chargingPileService.startCharging(nextRequestId, pileId);
         }
 
@@ -510,6 +511,14 @@ public class SchedulingServiceImpl implements SchedulingService {
         return request.getStatus() == RequestStatus.WAITING_IN_CHARGING_AREA;
     }
 
+    // 判断是否在充电
+    @Override
+    public boolean isCharging(Long userId) {
+        ChargingRequest request = getLatestRequest(userId);
+        assert request != null;
+        return request.getStatus() == RequestStatus.CHARGING;
+    }
+
     // 开启叫号
     @Override
     public void startCallNumber() {
@@ -522,5 +531,38 @@ public class SchedulingServiceImpl implements SchedulingService {
     public void stopCallNumber() {
         System.out.println("...停止叫号...");
         callNumberEnabled = false;
+    }
+
+    @Override
+    public List<ChargingRequest> getWaitingAreaQueue() {
+        // 获取快充和慢充队列中的所有请求ID
+        List<Long> allRequestIds = new ArrayList<>();
+        allRequestIds.addAll(waitingQueue.getFastQueue());
+        allRequestIds.addAll(waitingQueue.getSlowQueue());
+
+        // 按请求ID排序
+        allRequestIds.sort(Long::compareTo);
+
+        // 获取所有请求的详细信息
+        return allRequestIds.stream()
+                .map(chargingRequestMapper::findById)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, List<ChargingRequest>> getAllPileQueues() {
+        // 获取所有充电桩队列
+        Map<String, Queue<Long>> pileQueues = chargingPileQueueService.getPileQueues();
+        
+        // 转换为ChargingRequest列表
+        return pileQueues.entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> entry.getValue().stream()
+                            .map(chargingRequestMapper::findById)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList())
+                ));
     }
 } 

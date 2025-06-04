@@ -6,6 +6,7 @@ import com.online.chargingSystem.entity.enums.ChargingPileType;
 
 import java.util.List;
 import java.util.Queue;
+import java.util.Map;
 
 public interface ChargingPileQueueService {
 
@@ -51,4 +52,10 @@ public interface ChargingPileQueueService {
      * @return 队首请求ID，如果队列为空则返回null
      */
     Long getQueueHead(String pileId);
+
+    /**
+     * 获取所有充电桩队列
+     * @return 充电桩ID和对应队列的映射
+     */
+    Map<String, Queue<Long>> getPileQueues();
 }

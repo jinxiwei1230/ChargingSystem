@@ -217,6 +217,9 @@ public class ChargingPileServiceImpl implements ChargingPileService {
         System.out.println(queueHead);
         System.out.println(requestId);
         if (queueHead == null || !queueHead.equals(requestId)) {
+            System.out.println("queueHead:" + queueHead);
+            System.out.println("requestId:" + requestId);
+
             System.out.println("00000000000000000000");
             return false;
         }
