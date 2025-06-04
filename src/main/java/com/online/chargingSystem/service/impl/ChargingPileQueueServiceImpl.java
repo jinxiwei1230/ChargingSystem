@@ -12,10 +12,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -119,9 +122,10 @@ public class ChargingPileQueueServiceImpl implements ChargingPileQueueService, C
     // 检查是否有任意一个充电桩的队列还有空位
     @Override
     public boolean hasPileVacancy() {
-
         return pileQueues.values().stream()
-                .anyMatch(queue -> queue.getQueue().size() < ChargingPileQueue.QUEUE_LENGTH);
+                .anyMatch(queue -> queue.getQueue().size() < ChargingPileQueue.QUEUE_LENGTH &&
+                        (chargingPileMapper.findById(queue.getPileId()).getStatus() == ChargingPileStatus.IN_USE ||
+                                chargingPileMapper.findById(queue.getPileId()).getStatus() == ChargingPileStatus.AVAILABLE));
     }
     
     @Override
@@ -130,12 +134,13 @@ public class ChargingPileQueueServiceImpl implements ChargingPileQueueService, C
         List<ChargingPile> piles = chargingPileMapper.findByTypeAndStatus(type, ChargingPileStatus.AVAILABLE);
         // 获取指定类型的所有正在使用的充电桩
         List<ChargingPile> inUsePiles = chargingPileMapper.findByTypeAndStatus(type, ChargingPileStatus.IN_USE);
-        // 合并两个列表
-        piles.addAll(inUsePiles);
-        // 返回所有充电桩的ID
-        return piles.stream()
-                .map(ChargingPile::getId)
-                .collect(Collectors.toList());
+        // 使用Set来存储充电桩ID，确保没有重复
+        Set<String> pileIds = new HashSet<>();
+        // 添加所有充电桩ID到Set中
+        piles.forEach(pile -> pileIds.add(pile.getId()));
+        inUsePiles.forEach(pile -> pileIds.add(pile.getId()));
+        // 将Set转换回List并返回
+        return new ArrayList<>(pileIds);
     }
 
     @Override
