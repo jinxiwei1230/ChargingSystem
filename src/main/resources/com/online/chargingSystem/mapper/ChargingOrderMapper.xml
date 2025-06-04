@@ -135,5 +135,14 @@
         </if>
         ORDER BY create_time DESC
     </select>
+
+    <!-- 根据请求ID和状态查询订单 eenndd-->
+    <select id="findByRequestIdAndStatus" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM charging_order
+        WHERE request_id = #{requestId}
+        AND order_status = #{status}
+    </select>
     
 </mapper> 

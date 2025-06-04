@@ -121,6 +121,7 @@ CREATE TABLE `charging_request`  (
   `queue_number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '排队号(F1/T2格式)',
   `queue_join_time` datetime NULL DEFAULT NULL COMMENT '加入队列时间',
   `request_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '请求发起时间',
+  `charging_start_time` datetime NULL DEFAULT NULL COMMENT '开始充电时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `user_id`(`user_id` ASC) USING BTREE,
@@ -130,9 +131,9 @@ CREATE TABLE `charging_request`  (
 -- ----------------------------
 -- Records of charging_request
 -- ----------------------------
-INSERT INTO `charging_request` VALUES (11, 2, NULL, 'WAITING_IN_WAITING_AREA', 'FAST', 20, 'F1', '2025-06-01 18:50:52', '2025-06-01 18:50:52');
-INSERT INTO `charging_request` VALUES (12, 1, NULL, 'WAITING_IN_WAITING_AREA', 'FAST', 20, 'F2', '2025-06-01 18:51:04', '2025-06-01 18:51:04');
-INSERT INTO `charging_request` VALUES (13, 3, NULL, 'WAITING_IN_WAITING_AREA', 'SLOW', 20, 'T1', '2025-06-01 18:51:13', '2025-06-01 18:51:13');
+INSERT INTO `charging_request` VALUES (11, 2, NULL, 'WAITING_IN_WAITING_AREA', 'FAST', 20, 'F1', '2025-06-01 18:50:52', '2025-06-01 18:50:52', '2025-06-01 18:50:52');
+INSERT INTO `charging_request` VALUES (12, 1, NULL, 'WAITING_IN_WAITING_AREA', 'FAST', 20, 'F2', '2025-06-01 18:51:04', '2025-06-01 18:51:04', '2025-06-01 18:51:04');
+INSERT INTO `charging_request` VALUES (13, 3, NULL, 'WAITING_IN_WAITING_AREA', 'SLOW', 20, 'T1', '2025-06-01 18:51:13', '2025-06-01 18:51:13', '2025-06-01 18:51:13');
 
 -- ----------------------------
 -- Table structure for user

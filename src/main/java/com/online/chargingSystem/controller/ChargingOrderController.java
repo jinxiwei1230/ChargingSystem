@@ -50,20 +50,4 @@ public class ChargingOrderController {
             @RequestParam(defaultValue = "10") Integer size) {
         return Result.success(chargingOrderService.getUserOrders(userId, status, startDate, endDate, page, size));
     }
-
-    /**
-     * 获取充电桩订单列表
-     * @param pileId 充电桩ID
-     * @param date 日期
-     * @param status 订单状态（可选）
-     * @return 订单列表
-     */
-    @GetMapping("/pile/{pileId}")
-    public Result<?> getPileOrders(
-            @PathVariable String pileId,
-            @RequestParam LocalDate date,
-            @RequestParam(required = false) String status) {
-        List<ChargingOrder> orders = chargingOrderService.getPileOrders(pileId, date, status);
-        return Result.success(orders);
-    }
 } 
