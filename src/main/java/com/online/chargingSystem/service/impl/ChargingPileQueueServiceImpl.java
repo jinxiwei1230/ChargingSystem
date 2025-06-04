@@ -174,13 +174,16 @@ public class ChargingPileQueueServiceImpl implements ChargingPileQueueService, C
     @Override
     public Long getQueueHead(String pileId) {
         ChargingPileQueue queue = pileQueues.get(pileId);
-        if (queue == null || queue.getQueue().isEmpty()) {
-            System.out.println("该充电桩队列为空！");
-            return null;
-        }
-        System.out.println("充电桩队列：");
-        System.out.println(queue);
-        return queue.getQueue().peek();
+        return queue != null && !queue.getQueue().isEmpty() ? queue.getQueue().peek() : null;
+    }
+
+    @Override
+    public Map<String, Queue<Long>> getPileQueues() {
+        return pileQueues.entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> entry.getValue().getQueue()
+                ));
     }
 
 } 

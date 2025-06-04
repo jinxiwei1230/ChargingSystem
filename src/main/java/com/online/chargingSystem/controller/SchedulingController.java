@@ -9,6 +9,9 @@ import com.online.chargingSystem.service.SchedulingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 调度控制器
  * 处理充电请求
@@ -23,7 +26,33 @@ public class SchedulingController {
     @Autowired
     private FaultService faultService;
 
-    // 提交充电请求
+    /**
+     * 获取等候区队列
+     * @return 按请求ID排序的等候区请求列表
+     */
+    @GetMapping("/waiting-queue")
+    public Result<?> getWaitingAreaQueue() {
+        List<ChargingRequest> queue = schedulingService.getWaitingAreaQueue();
+        return Result.success("获取等候区队列成功", queue);
+    }
+
+    /**
+     * 获取所有充电桩队列
+     * @return 充电桩ID和对应队列的映射
+     */
+    @GetMapping("/pile-queues")
+    public Result<?> getAllPileQueues() {
+        Map<String, List<ChargingRequest>> queues = schedulingService.getAllPileQueues();
+        return Result.success("获取充电桩队列成功", queues);
+    }
+
+    /**
+     * 提交充电请求
+     * @param userId 用户ID
+     * @param requestAmount 请求充电量
+     * @param mode 充电模式
+     * @return 处理结果
+     */
     @RequestMapping("/submit")
     public Result<?> submitChargingRequest(@RequestParam Long userId,
                                            @RequestParam Double requestAmount,
@@ -38,21 +67,34 @@ public class SchedulingController {
         return result != null ? Result.success("充电申请提交成功", result) : Result.error("充电申请提交失败");
     }
 
-    // 查看本车排队号码（返回null表示还没有分配排队号码）
+    /**
+     * 查看本车排队号码
+     * @param userId 用户ID
+     * @return 排队号码（返回null表示还没有分配排队号码）
+     */
     @RequestMapping("/getQueueNumber")
     public Result<?> getQueueNumber(@RequestParam Long userId) {
         String result = schedulingService.getQueueNumber(userId);
         return Result.success("获取成功", result);
     }
 
-    // 查看本充电模式下前车等待数量
+    /**
+     * 查看本充电模式下前车等待数量
+     * @param userId 用户ID
+     * @return 前车等待数量
+     */
     @RequestMapping("/getAheadNumber")
     public Result<?> getAheadNumber(@RequestParam Long userId) {
         int result = schedulingService.getAheadNumber(userId);
         return Result.success("获取成功", result);
     }
 
-    // 修改充电模式（如果请求的模式和原来的相同，就不要调用该接口）
+    /**
+     * 修改充电模式
+     * @param userId 用户ID
+     * @param mode 充电模式
+     * @return 处理结果
+     */
     @RequestMapping("/modifyMode")
     public Result<?> modifyChargingMode(@RequestParam Long userId,
                                         @RequestParam ChargingPileType mode) {
@@ -63,7 +105,12 @@ public class SchedulingController {
         return Result.success("充电模式修改成功");
     }
 
-    // 修改充电量
+    /**
+     * 修改充电量
+     * @param userId 用户ID
+     * @param requestAmount 请求充电量
+     * @return 处理结果
+     */
     @RequestMapping("/modifyAmount")
     public Result<?> modifyChargingMode(@RequestParam Long userId,
                                         @RequestParam Double requestAmount) {
@@ -77,7 +124,11 @@ public class SchedulingController {
         return Result.success("充电量修改成功");
     }
 
-    // 取消充电并回到等候区重新排队
+    /**
+     * 取消充电并回到等候区重新排队
+     * @param userId 用户ID
+     * @return 处理结果
+     */
     @RequestMapping("/cancelAndRequeue")
     public Result<?> cancelAndRequeue(@RequestParam Long userId) {
         if (!(schedulingService.isInWaitingArea(userId) || schedulingService.isInChargingArea(userId))) {
@@ -87,7 +138,11 @@ public class SchedulingController {
         return Result.success("取消充电并重新排队成功");
     }
 
-    // 取消充电并离开
+    /**
+     * 取消充电并离开
+     * @param userId 用户ID
+     * @return 处理结果
+     */
     @RequestMapping("/cancelAndLeave")
     public Result<?> cancelAndLeave(@RequestParam Long userId) {
         if (!(schedulingService.isInWaitingArea(userId) || schedulingService.isInChargingArea(userId))) {
@@ -97,9 +152,16 @@ public class SchedulingController {
         return Result.success("取消充电并离开成功");
     }
 
-    // 结束充电
+    /**
+     * 结束充电
+     * @param userId 用户ID
+     * @return 处理结果
+     */
     @RequestMapping("/finish")
     public Result<?> finish(@RequestParam Long userId) {
+        if (!schedulingService.isCharging(userId)) {
+            return Result.error("车辆不在充电状态，无法结束充电");
+        }
         boolean result = schedulingService.handleChargingComplete(userId);
         return result ? Result.success("结束充电成功") : Result.error("结束充电失败");
     }
@@ -135,4 +197,5 @@ public class SchedulingController {
             return Result.error("故障恢复处理失败：" + e.getMessage());
         }
     }
+
 }
