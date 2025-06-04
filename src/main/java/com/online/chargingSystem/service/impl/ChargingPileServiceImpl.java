@@ -103,7 +103,7 @@ public class ChargingPileServiceImpl implements ChargingPileService {
                 order.setPileId(pileId);
                 order.setOrderDate(LocalDate.now());
                 order.setOrderStatus(OrderStatus.FAULTED);
-                order.setStartTime(request.getQueueJoinTime());
+                order.setStartTime(request.getChargingStartTime());
                 order.setEndTime(LocalDateTime.now());
                 order.setCreateTime(LocalDateTime.now());
 
@@ -304,7 +304,7 @@ public class ChargingPileServiceImpl implements ChargingPileService {
                 order.setPileId(pileId);
                 order.setOrderDate(LocalDate.now());
                 order.setOrderStatus(OrderStatus.COMPLETED);
-                order.setStartTime(request.getQueueJoinTime());
+                order.setStartTime(request.getChargingStartTime());
                 order.setEndTime(LocalDateTime.now());
                 order.setCreateTime(LocalDateTime.now());
                 order.setTotalDuration(BigDecimal.valueOf(chargingDurationMinutes));
