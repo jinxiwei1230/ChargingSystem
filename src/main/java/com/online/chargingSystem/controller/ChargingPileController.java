@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import lombok.Data;
 import com.online.chargingSystem.dto.ChargingPileQueueDTO;
+import com.online.chargingSystem.dto.ChargingReportDTO;
+import com.online.chargingSystem.dto.ChargingReportSummaryDTO;
+import com.online.chargingSystem.dto.ChargingQueueInfoDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -155,6 +158,43 @@ public class ChargingPileController {
                                 @RequestParam String pileId) {
         boolean result = chargingPileService.endCharging(userId, pileId);
         return result ? Result.success("结束充电成功") : Result.error("结束充电失败");
+    }
+
+    /**
+     * 获取充电桩报表数据
+     * @param pileId 充电桩ID（可选）
+     * @param timeType 时间类型（day/week/month）
+     * @return 报表数据
+     */
+    @GetMapping("/report")
+    public Result<List<ChargingReportDTO>> getChargingReport(
+            @RequestParam(required = false) String pileId,
+            @RequestParam String timeType) {
+        List<ChargingReportDTO> result = chargingPileService.getChargingReport(pileId, timeType);
+        return Result.success(result);
+    }
+
+    /**
+     * 获取所有充电桩的汇总报表数据
+     * @param timeType 时间类型（day/week/month）
+     * @return 汇总报表数据（包含总体数据和每个充电桩的详细数据）
+     */
+    @GetMapping("/report/summary")
+    public Result<ChargingReportSummaryDTO> getChargingReportSummary(
+            @RequestParam String timeType) {
+        ChargingReportSummaryDTO result = chargingPileService.getChargingReportSummary(timeType);
+        return Result.success(result);
+    }
+
+    /**
+     * 获取充电桩等候队列详细信息
+     * @param pileId 充电桩ID
+     * @return 等候队列详细信息
+     */
+    @GetMapping("/queue-details")
+    public Result<List<ChargingQueueInfoDTO>> getChargingQueueDetails(@RequestParam String pileId) {
+        List<ChargingQueueInfoDTO> result = chargingPileService.getChargingQueueDetails(pileId);
+        return Result.success(result);
     }
 }
 

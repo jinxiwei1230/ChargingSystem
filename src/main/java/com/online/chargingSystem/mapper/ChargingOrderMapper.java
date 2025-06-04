@@ -1,6 +1,7 @@
 package com.online.chargingSystem.mapper;
 
 import com.online.chargingSystem.entity.ChargingOrder;
+import com.online.chargingSystem.entity.enums.OrderStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.time.LocalDate;
@@ -107,4 +108,13 @@ public interface ChargingOrderMapper {
     List<ChargingOrder> findPileOrders(@Param("pileId") String pileId,
                                       @Param("date") LocalDate date,
                                       @Param("status") String status);
+
+    /**
+     * eenndd
+     * 根据请求ID和状态查询订单
+     * @param requestId 请求ID
+     * @param status 订单状态
+     * @return 充电订单
+     */
+    ChargingOrder findByRequestIdAndStatus(@Param("requestId") Long requestId, @Param("status") OrderStatus status);
 } 
