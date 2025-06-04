@@ -1,5 +1,6 @@
 package com.online.chargingSystem.service.impl;
 
+import com.online.chargingSystem.entity.ChargingPile;
 import com.online.chargingSystem.entity.ChargingRequest;
 import com.online.chargingSystem.entity.User;
 import com.online.chargingSystem.entity.WaitingQueue;
@@ -19,14 +20,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static com.online.chargingSystem.entity.enums.ChargingPileType.FAST;
 import static com.online.chargingSystem.entity.enums.RequestStatus.WAITING_IN_WAITING_AREA;
+
 @Service
 @EnableScheduling
 public class SchedulingServiceImpl implements SchedulingService {
@@ -48,16 +54,48 @@ public class SchedulingServiceImpl implements SchedulingService {
     private volatile boolean callNumberEnabled = true;
 
     // 用于生成快充和慢充的排队序号
-    // AtomicInteger是一个提供原子操作的整数类
     private final AtomicInteger fastQueueCounter = new AtomicInteger(0);
     private final AtomicInteger slowQueueCounter = new AtomicInteger(0);
+
+    // 处理充电请求
+    @Override
+    @Transactional
+    public ChargingRequest handleChargingRequest(Long userId, Double requestAmount, ChargingPileType mode) {
+        // 构造充电请求
+        ChargingRequest request = new ChargingRequest();
+        request.setUserId(userId);
+        request.setAmount(requestAmount);
+        request.setMode(mode);
+        request.setStatus(WAITING_IN_WAITING_AREA);
+        request.setRequestTime(LocalDateTime.now());
+        request.setQueueJoinTime(LocalDateTime.now());
+
+        // 生成排队号码
+        String queueNumber = generateQueueNumber(mode);
+        request.setQueueNumber(queueNumber);
+
+        // 保存充电请求
+        chargingRequestMapper.insert(request);
+
+        //将请求添加到队列
+        switch (mode){
+            case FAST:
+                waitingQueue.getFastQueue().offer(request.getId());
+                break;
+            case SLOW:
+                waitingQueue.getSlowQueue().offer(request.getId());
+                break;
+        }
+        System.out.println("** 请求 " + request.getId() + " 入队，排队号为 " + request.getQueueNumber() + " **");
+
+        return request;
+    }
 
     /**
      * 定时检查是否可以叫号
      * 每5秒检查一次
      */
     @Scheduled(fixedRate = 5000)
-
     public void scheduledCallNumber() {
         try {
             // 检查是否可以叫号
@@ -98,13 +136,6 @@ public class SchedulingServiceImpl implements SchedulingService {
     // 判断是否能叫号
     @Override
     public boolean canCallNumber() {
-        // 检查是否有充电桩故障
-        List<String> faultPiles = chargingPileQueueService.getFaultPiles();
-        if (!faultPiles.isEmpty()) {
-            System.out.println("存在故障充电桩，无法叫号。故障充电桩: " + faultPiles);
-            return false;
-        }
-
         // 检查充电区是否有空位
         boolean hasAvailable = chargingPileQueueService.hasPileVacancy();
         if (!hasAvailable) {
@@ -115,8 +146,10 @@ public class SchedulingServiceImpl implements SchedulingService {
 
     // 处理指定类型的等待队列
     @Transactional
-    protected void processQueue(Queue<Long> queue, ChargingPileType type) {
+    protected boolean processQueue(Queue<Long> queue, ChargingPileType type) {
         System.out.println("处理" + (type == FAST ? "快充" : "慢充") + "队列...");
+
+        boolean allRequestsProcessed = false;  // 该队列中的请求是否都调度完毕
 
         while (!queue.isEmpty()) {
             // 获取队列中的第一个请求
@@ -158,44 +191,15 @@ public class SchedulingServiceImpl implements SchedulingService {
             if(chargingPileMapper.findById(optimalPileId).getStatus() == ChargingPileStatus.AVAILABLE){
                 chargingPileService.startCharging(requestId, optimalPileId);
             }
-
         }
 
-        System.out.println((type == FAST ? "快充" : "慢充") + "队列处理完成\n");
-    }
-
-    // 处理充电请求
-    @Override
-    @Transactional
-    public ChargingRequest handleChargingRequest(Long userId, Double requestAmount, ChargingPileType mode) {
-        // 构造充电请求
-        ChargingRequest request = new ChargingRequest();
-        request.setUserId(userId);
-        request.setAmount(requestAmount);
-        request.setMode(mode);
-        request.setStatus(WAITING_IN_WAITING_AREA);
-        request.setRequestTime(LocalDateTime.now());
-        request.setQueueJoinTime(LocalDateTime.now());
-
-        // 生成排队号码
-        String queueNumber = generateQueueNumber(mode);
-        request.setQueueNumber(queueNumber);
-
-        // 保存充电请求
-        chargingRequestMapper.insert(request);
-
-        //将请求添加到队列
-        switch (mode){
-            case FAST:
-                waitingQueue.getFastQueue().offer(request.getId());
-                break;
-            case SLOW:
-                waitingQueue.getSlowQueue().offer(request.getId());
-                break;
+        if(queue.isEmpty()){
+            allRequestsProcessed = true;
+            System.out.println((type == FAST ? "快充" : "慢充") + "队列处理完成\n");
+        }else{
+            System.out.println("还有未能调度的请求");
         }
-        System.out.println("** 请求 " + request.getId() + " 入队，排队号为 " + request.getQueueNumber() + " **");
-
-        return request;
+        return allRequestsProcessed;
     }
 
     // 获取用户最新一次充电请求
@@ -506,12 +510,14 @@ public class SchedulingServiceImpl implements SchedulingService {
     // 开启叫号
     @Override
     public void startCallNumber() {
+        System.out.println("...开始叫号...");
         callNumberEnabled = true;
     }
 
     // 停止叫号
     @Override
     public void stopCallNumber() {
+        System.out.println("...停止叫号...");
         callNumberEnabled = false;
     }
 } 

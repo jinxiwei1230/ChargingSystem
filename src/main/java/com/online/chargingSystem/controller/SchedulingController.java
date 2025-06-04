@@ -4,6 +4,7 @@ import com.online.chargingSystem.common.Result;
 import com.online.chargingSystem.entity.ChargingRequest;
 import com.online.chargingSystem.entity.WaitingQueue;
 import com.online.chargingSystem.entity.enums.ChargingPileType;
+import com.online.chargingSystem.service.FaultService;
 import com.online.chargingSystem.service.SchedulingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,8 @@ public class SchedulingController {
     @Autowired
     private SchedulingService schedulingService;
 
+    @Autowired
+    private FaultService faultService;
 
     // 提交充电请求
     @RequestMapping("/submit")
@@ -101,4 +104,35 @@ public class SchedulingController {
         return result ? Result.success("结束充电成功") : Result.error("结束充电失败");
     }
 
+    /**
+     * 充电桩故障发生
+     * @param pileId 故障充电桩ID
+     * @param strategy 调度策略（PRIORITY-优先级调度，TIME_ORDER-时间顺序调度）
+     * @return 处理结果
+     */
+    @PostMapping("/fault/handle")
+    public Result<?> handlePileFault(@RequestParam String pileId,
+                                   @RequestParam String strategy) {
+        try {
+            faultService.handlePileFault(pileId, strategy);
+            return Result.success("故障处理成功");
+        } catch (Exception e) {
+            return Result.error("故障处理失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 处理充电桩故障恢复
+     * @param pileId 恢复的充电桩ID
+     * @return 处理结果
+     */
+    @PostMapping("/fault/recovery")
+    public Result<?> handlePileRecovery(@RequestParam String pileId) {
+        try {
+            faultService.handlePileRecovery(pileId);
+            return Result.success("故障恢复处理成功");
+        } catch (Exception e) {
+            return Result.error("故障恢复处理失败：" + e.getMessage());
+        }
+    }
 }
