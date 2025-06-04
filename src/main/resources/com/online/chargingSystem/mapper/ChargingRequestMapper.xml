@@ -32,7 +32,8 @@
             amount = #{amount},
             queue_number = #{queueNumber},
             queue_join_time = #{queueJoinTime},
-            request_time = #{requestTime}
+            request_time = #{requestTime},
+            charging_pile_id = #{chargingPileId}
         WHERE id = #{id}
     </update>
 
@@ -58,5 +59,14 @@
         SELECT <include refid="Base_Column_List"/>
         FROM charging_request
         WHERE status = 'CHARGING'
+    </select>
+
+    <select id="findByUserIdAndStatus" resultType="com.online.chargingSystem.entity.ChargingRequest">
+        SELECT *
+        FROM charging_request
+        WHERE user_id = #{userId}
+        AND status = #{status}
+        ORDER BY request_time DESC
+        LIMIT 1
     </select>
 </mapper>
