@@ -11,18 +11,19 @@
         <result column="queue_number" property="queueNumber"/>
         <result column="queue_join_time" property="queueJoinTime"/>
         <result column="request_time" property="requestTime"/>
+        <result column="charging_start_time" property="chargingStartTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, charging_pile_id, status, mode, amount, queue_number, queue_join_time, request_time
+        id, user_id, charging_pile_id, status, mode, amount, queue_number, queue_join_time, request_time, charging_start_time
     </sql>
 
     <insert id="insert" parameterType="com.online.chargingSystem.entity.ChargingRequest" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO charging_request (
-            user_id, charging_pile_id, status, mode, amount, queue_number, queue_join_time, request_time
+            user_id, charging_pile_id, status, mode, amount, queue_number, queue_join_time, request_time, charging_start_time
         ) VALUES (
-                     #{userId}, #{chargingPileId}, #{status}, #{mode}, #{amount}, #{queueNumber}, #{queueJoinTime}, #{requestTime}
-                 )
+            #{userId}, #{chargingPileId}, #{status}, #{mode}, #{amount}, #{queueNumber}, #{queueJoinTime}, #{requestTime}, #{chargingStartTime}
+        )
     </insert>
 
     <update id="update" parameterType="com.online.chargingSystem.entity.ChargingRequest">
@@ -33,7 +34,8 @@
             queue_number = #{queueNumber},
             queue_join_time = #{queueJoinTime},
             request_time = #{requestTime},
-            charging_pile_id = #{chargingPileId}
+            charging_pile_id = #{chargingPileId},
+            charging_start_time = #{chargingStartTime}
         WHERE id = #{id}
     </update>
 

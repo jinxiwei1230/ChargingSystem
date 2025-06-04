@@ -25,4 +25,6 @@ public class ChargingRequest {
     private LocalDateTime queueJoinTime;
     // 请求发起时间
     private LocalDateTime requestTime;
+    // 开始充电时间
+    private LocalDateTime chargingStartTime;
 }

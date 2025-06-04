@@ -17,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Lazy;
 
 import java.time.LocalDateTime;
 import java.util.LinkedList;
@@ -38,6 +39,7 @@ public class SchedulingServiceImpl implements SchedulingService {
     @Autowired
     private WaitingQueue waitingQueue;
     @Autowired
+    @Lazy
     private ChargingPileService chargingPileService;
     @Autowired
     private ChargingPileQueueService chargingPileQueueService;

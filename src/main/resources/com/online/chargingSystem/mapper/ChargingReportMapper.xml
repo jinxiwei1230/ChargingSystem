@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.online.chargingSystem.mapper.ChargingReportMapper">
+    
+    <!-- 获取指定充电桩的充电报表数据 -->
+    <select id="getChargingReportByPileId" resultType="com.online.chargingSystem.dto.ChargingReportDTO">
+        SELECT 
+            o.pile_id as pileId,
+            MIN(o.start_time) as startTime,
+            MAX(o.end_time) as endTime,
+            COUNT(*) as totalChargingCount,
+            SUM(o.total_duration) / 60.0 as totalChargingDuration,
+            SUM(o.total_kwh) as totalChargingAmount,
+            SUM(o.total_charge_fee) as totalChargingFee,
+            SUM(o.total_service_fee) as totalServiceFee,
+            SUM(o.total_fee) as totalFee
+        FROM charging_order o
+        WHERE o.order_status = 'COMPLETED'
+        <if test="pileId != null">
+            AND o.pile_id = #{pileId}
+        </if>
+        AND o.start_time >= #{startTime}
+        AND o.end_time &lt;= #{endTime}
+        GROUP BY o.pile_id
+    </select>
+
+    <!-- 获取所有充电桩的汇总报表数据 -->
+    <select id="getChargingReportSummary" resultType="com.online.chargingSystem.dto.ChargingReportDTO">
+        SELECT 
+            MIN(o.start_time) as startTime,
+            MAX(o.end_time) as endTime,
+            COUNT(*) as totalChargingCount,
+            SUM(o.total_duration) / 60.0 as totalChargingDuration,
+            SUM(o.total_kwh) as totalChargingAmount,
+            SUM(o.total_charge_fee) as totalChargingFee,
+            SUM(o.total_service_fee) as totalServiceFee,
+            SUM(o.total_fee) as totalFee
+        FROM charging_order o
+        WHERE o.order_status = 'COMPLETED'
+        AND o.start_time >= #{startTime}
+        AND o.end_time &lt;= #{endTime}
+    </select>
+
+</mapper> 
