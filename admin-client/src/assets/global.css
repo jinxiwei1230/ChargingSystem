@@ -1,0 +1,150 @@
+ /* 重置样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    height: 100%;
+    width: 100%;
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    background-color: #f5f7fa;
+  }
+  
+  /* 滚动条样式 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+  
+  /* 通用样式 */
+  .flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .flex-start {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  
+  .flex-end {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  
+  /* 文本溢出省略号 */
+  .ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* 卡片样式 */
+  .card-container {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  /* 按钮样式 */
+  .btn-primary {
+    background-color: #409EFF;
+    border-color: #409EFF;
+    color: #fff;
+  }
+  
+  .btn-success {
+    background-color: #67C23A;
+    border-color: #67C23A;
+    color: #fff;
+  }
+  
+  .btn-warning {
+    background-color: #E6A23C;
+    border-color: #E6A23C;
+    color: #fff;
+  }
+  
+  .btn-danger {
+    background-color: #F56C6C;
+    border-color: #F56C6C;
+    color: #fff;
+  }
+  
+  /* 表单样式 */
+  .form-container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .form-footer {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  /* 表格样式 */
+  .table-container {
+    margin-top: 20px;
+  }
+  
+  /* 分页样式 */
+  .pagination-container {
+    margin-top: 20px;
+    text-align: right;
+  }
+  
+  /* 状态标签样式 */
+  .status-tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  
+  .status-success {
+    background-color: #f0f9eb;
+    color: #67c23a;
+  }
+  
+  .status-warning {
+    background-color: #fdf6ec;
+    color: #e6a23c;
+  }
+  
+  .status-danger {
+    background-color: #fef0f0;
+    color: #f56c6c;
+  }
+  
+  .status-info {
+    background-color: #f4f4f5;
+    color: #909399;
+  }

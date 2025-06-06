@@ -1,0 +1,101 @@
+ /* 重置默认样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    height: 100%;
+    width: 100%;
+  }
+  
+  /* 全局滚动条样式 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  
+  /* Element UI 样式覆盖 */
+  .el-card {
+    margin-bottom: 20px;
+  }
+  
+  .el-card__header {
+    padding: 15px 20px;
+    font-weight: bold;
+  }
+  
+  .el-form-item__label {
+    font-weight: normal;
+  }
+  
+  .el-button {
+    font-weight: normal;
+  }
+  
+  /* 通用间距类 */
+  .mt-20 {
+    margin-top: 20px;
+  }
+  
+  .mb-20 {
+    margin-bottom: 20px;
+  }
+  
+  .ml-20 {
+    margin-left: 20px;
+  }
+  
+  .mr-20 {
+    margin-right: 20px;
+  }
+  
+  /* 通用文本类 */
+  .text-center {
+    text-align: center;
+  }
+  
+  .text-right {
+    text-align: right;
+  }
+  
+  .text-left {
+    text-align: left;
+  }
+  
+  /* 通用flex布局类 */
+  .flex {
+    display: flex;
+  }
+  
+  .flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .flex-column {
+    display: flex;
+    flex-direction: column;
+  }
