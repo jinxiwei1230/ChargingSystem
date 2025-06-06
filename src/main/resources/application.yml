@@ -6,8 +6,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/chargingSystem?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
-#    password: root
+#    password: 123456
+    password: root
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       minimum-idle: 5
@@ -39,19 +39,19 @@ charging-station:
   # 等候区配置
   waiting-area:
     max-capacity: 6  # 最大车位容量
-  
+
   # 充电区配置
   charging-area:
     # 充电桩数量配置
     fast-piles: 2    # 快充电桩数量
     trickle-piles: 3 # 慢充电桩数量
     queue-length: 2  # 每个充电桩排队队列长度
-    
+
     # 充电功率配置（度/小时）
     charging-rates:
       fast: 30.0     # 快充功率
       trickle: 7.0   # 慢充功率
-    
+
     # 计费配置
     pricing:
       # 电价时段配置
@@ -61,7 +61,7 @@ charging-station:
           start: '07:00:00'
           end: '10:00:00'
           price: 0.70
-        - id: 2 
+        - id: 2
           type: 'PEAK'
           start: '10:00:00'
           end: '15:00:00'
