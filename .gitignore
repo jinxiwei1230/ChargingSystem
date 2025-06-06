@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Private Keys ###
+*.pem
+*.key
+*.priv
+*.p12
+*.pfx
+**/node_modules/**/*.pem
+**/node_modules/**/*.key
