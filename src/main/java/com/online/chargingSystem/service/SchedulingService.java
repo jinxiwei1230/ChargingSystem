@@ -146,10 +146,4 @@ public interface SchedulingService {
      */
     List<ChargingRequest> getWaitingAreaQueue();
 
-    /**
-     * 获取所有充电桩队列
-     * @return 充电桩ID和对应队列的映射
-     */
-    Map<String, List<ChargingRequest>> getAllPileQueues();
-
 }

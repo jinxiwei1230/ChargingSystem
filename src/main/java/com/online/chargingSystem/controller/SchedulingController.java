@@ -37,16 +37,6 @@ public class SchedulingController {
     }
 
     /**
-     * 获取所有充电桩队列
-     * @return 充电桩ID和对应队列的映射
-     */
-    @GetMapping("/pile-queues")
-    public Result<?> getAllPileQueues() {
-        Map<String, List<ChargingRequest>> queues = schedulingService.getAllPileQueues();
-        return Result.success("获取充电桩队列成功", queues);
-    }
-
-    /**
      * 提交充电请求
      * @param userId 用户ID
      * @param requestAmount 请求充电量
