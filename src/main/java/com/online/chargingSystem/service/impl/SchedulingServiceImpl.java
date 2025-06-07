@@ -98,7 +98,8 @@ public class SchedulingServiceImpl implements SchedulingService {
      * 定时检查是否可以叫号
      * 每5秒检查一次
      */
-    @Scheduled(fixedRate = 5000)
+//    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRateString = "${scheduling.task.interval}")
     public void scheduledCallNumber() {
         try {
             // 检查是否可以叫号

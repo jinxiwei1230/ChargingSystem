@@ -2,13 +2,12 @@ package com.online.chargingSystem.controller;
 
 import com.online.chargingSystem.common.Result;
 import com.online.chargingSystem.entity.User;
+import com.online.chargingSystem.entity.ChargingRequest;
 import com.online.chargingSystem.service.UserService;
 import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 /**
  * 用户控制器
@@ -59,6 +58,35 @@ public class UserController {
         }else{
             return Result.error("用户名或车牌号已存在！");
         }
+    }
+
+    /**
+     * 获取用户信息
+     * @param userId 用户ID
+     * @return 用户信息
+     */
+    @GetMapping("/info")
+    public Result<User> getUserInfo(@RequestParam Long userId) {
+        User user = userService.getUserInfo(userId);
+        if (user != null) {
+            return Result.success("获取用户信息成功", user);
+        } else {
+            return Result.error("用户不存在");
+        }
+    }
+
+    /**
+     * 获取用户充电请求列表
+     * @param userId 用户ID
+     * @return 充电请求列表
+     */
+    @GetMapping("/requests")
+    public Result<List<ChargingRequest>> getUserChargingRequests(@RequestParam Long userId) {
+        List<ChargingRequest> requests = userService.getUserChargingRequests(userId);
+        if (requests == null || requests.isEmpty()) {
+            return Result.error("该用户暂无充电请求记录");
+        }
+        return Result.success("获取用户充电请求列表成功", requests);
     }
 }
 
