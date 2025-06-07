@@ -71,4 +71,8 @@
         ORDER BY request_time DESC
         LIMIT 1
     </select>
+    
+    <select id="findAll" resultType="com.online.chargingSystem.entity.ChargingRequest">
+        SELECT * FROM charging_request
+    </select>
 </mapper>
