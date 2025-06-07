@@ -196,6 +196,16 @@ public class ChargingPileController {
         List<ChargingQueueInfoDTO> result = chargingPileService.getChargingQueueDetails(pileId);
         return Result.success(result);
     }
+
+    /**
+     * 获取所有充电桩信息
+     * @return 所有充电桩信息列表
+     */
+    @GetMapping("/all")
+    public Result<List<ChargingPile>> getAllChargingPiles() {
+        List<ChargingPile> result = chargingPileService.findAll();
+        return Result.success(result);
+    }
 }
 
 @Data

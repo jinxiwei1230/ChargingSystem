@@ -574,4 +574,9 @@ public class ChargingPileServiceImpl implements ChargingPileService {
         
         return result;
     }
+
+    @Override
+    public List<ChargingPile> findAll() {
+        return chargingPileMapper.findAll();
+    }
 } 

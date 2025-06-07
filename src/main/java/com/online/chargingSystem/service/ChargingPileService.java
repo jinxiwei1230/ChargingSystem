@@ -84,4 +84,6 @@ public interface ChargingPileService {
      * @return 等候队列详细信息列表
      */
     List<ChargingQueueInfoDTO> getChargingQueueDetails(String pileId);
+
+    List<ChargingPile> findAll();
 } 
