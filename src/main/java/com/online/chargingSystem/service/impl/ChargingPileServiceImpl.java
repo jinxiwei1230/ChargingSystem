@@ -9,7 +9,6 @@ import com.online.chargingSystem.entity.enums.ChargingPileStatus;
 import com.online.chargingSystem.entity.enums.RequestStatus;
 import com.online.chargingSystem.entity.enums.OrderStatus;
 import com.online.chargingSystem.entity.enums.PeriodType;
-import com.online.chargingSystem.dto.ChargingPileQueueDTO;
 import com.online.chargingSystem.dto.ChargingReportDTO;
 import com.online.chargingSystem.dto.ChargingReportSummaryDTO;
 import com.online.chargingSystem.dto.ChargingQueueInfoDTO;
@@ -186,21 +185,6 @@ public class ChargingPileServiceImpl implements ChargingPileService {
     public ChargingPile queryPileState(String pileId) {
         return chargingPileMapper.findById(pileId);
     }
-
-    @Override
-    public List<ChargingPileQueueDTO> getPileQueueInfo(String pileId) {
-        return chargingPileMapper.findPileQueueInfo(pileId);
-    }
-
-    @Override
-    public Map<String, List<ChargingPileQueueDTO>> getAllPileQueueInfo() {
-        // 1. 从数据库获取所有充电桩的等候队列信息
-        List<ChargingPileQueueDTO> allQueueInfo = chargingPileMapper.findAllPileQueueInfo();
-        // 2. 将等候队列信息按充电桩ID分组
-        return allQueueInfo.stream()
-                .collect(Collectors.groupingBy(ChargingPileQueueDTO::getPileId));
-    }
-
 
     @Override
     @Transactional

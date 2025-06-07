@@ -13,17 +13,6 @@
         <result column="updated_at" property="updatedAt"/>
     </resultMap>
 
-    <resultMap id="QueueInfoResultMap" type="com.online.chargingSystem.dto.ChargingPileQueueDTO">
-        <result column="requestId" property="requestId"/>
-        <result column="userId" property="userId"/>
-        <result column="batteryCapacity" property="batteryCapacity"/>
-        <result column="requestAmount" property="requestAmount"/>
-        <result column="queueNumber" property="queueNumber"/>
-        <result column="queueJoinTime" property="queueJoinTime"/>
-        <result column="pileId" property="pileId"/>
-        <result column="waitingDuration" property="waitingDuration"/>
-    </resultMap>
-
     <sql id="Base_Column_List">
         id, type, status, charging_power, charging_times, total_charging_duration, 
         total_charging_amount, created_at, updated_at
@@ -86,37 +75,4 @@
             updated_at = NOW()
         WHERE id = #{pileId}
     </update>
-
-    <select id="findPileQueueInfo" resultMap="QueueInfoResultMap">
-        SELECT 
-            r.id as requestId,
-            r.user_id as userId,
-            u.battery_capacity as batteryCapacity,
-            r.amount as requestAmount,
-            r.queue_number as queueNumber,
-            r.queue_join_time as queueJoinTime,
-            r.charging_pile_id as pileId,
-            TIMESTAMPDIFF(MINUTE, r.queue_join_time, NOW()) as waitingDuration
-        FROM charging_request r
-        JOIN user u ON r.user_id = u.id
-        WHERE r.charging_pile_id = #{pileId}
-        AND r.status = 'WAITING_IN_CHARGING_AREA'
-        ORDER BY r.queue_join_time
-    </select>
-
-    <select id="findAllPileQueueInfo" resultMap="QueueInfoResultMap">
-        SELECT 
-            r.id as requestId,
-            r.user_id as userId,
-            u.battery_capacity as batteryCapacity,
-            r.amount as requestAmount,
-            r.queue_number as queueNumber,
-            r.queue_join_time as queueJoinTime,
-            r.charging_pile_id as pileId,
-            TIMESTAMPDIFF(MINUTE, r.queue_join_time, NOW()) as waitingDuration
-        FROM charging_request r
-        JOIN user u ON r.user_id = u.id
-        WHERE r.status = 'WAITING_IN_CHARGING_AREA'
-        ORDER BY r.charging_pile_id, r.queue_join_time
-    </select>
 </mapper> 

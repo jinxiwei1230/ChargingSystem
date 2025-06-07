@@ -2,7 +2,6 @@ package com.online.chargingSystem.service;
 
 import com.online.chargingSystem.entity.ChargingPile;
 import com.online.chargingSystem.entity.enums.ChargingPileStatus;
-import com.online.chargingSystem.dto.ChargingPileQueueDTO;
 import com.online.chargingSystem.dto.ChargingReportDTO;
 import com.online.chargingSystem.dto.ChargingReportSummaryDTO;
 import com.online.chargingSystem.dto.ChargingQueueInfoDTO;
@@ -33,19 +32,6 @@ public interface ChargingPileService {
 
     // 查询充电桩状态
     ChargingPile queryPileState(String pileId);
-
-    /**
-     * 获取指定充电桩的等候队列信息
-     * @param pileId 充电桩ID
-     * @return 等候队列信息列表
-     */
-    List<ChargingPileQueueDTO> getPileQueueInfo(String pileId);
-
-    /**
-     * 获取所有充电桩的等候队列信息
-     * @return 所有充电桩的等候队列信息
-     */
-    Map<String, List<ChargingPileQueueDTO>> getAllPileQueueInfo();
 
     /**
      * 开始充电
