@@ -20,10 +20,6 @@
               <i class="el-icon-s-home"></i>
               <span>首页</span>
             </el-menu-item>
-            <el-menu-item index="/users">
-              <i class="el-icon-user"></i>
-              <span>用户管理</span>
-            </el-menu-item>
             <el-menu-item index="/charging-piles">
               <i class="el-icon-lightning"></i>
               <span>充电桩管理</span>

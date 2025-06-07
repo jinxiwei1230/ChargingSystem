@@ -25,4 +25,15 @@ export function register(data) {
     method: 'post',
     params: data
   })
+}
+
+// 获取用户信息
+export function getUserInfo(userId) {
+  return service({
+    url: '/user/info',
+    method: 'get',
+    params: {
+      userId
+    }
+  })
 } 

@@ -21,11 +21,6 @@ const routes = [
         component: () => import('../views/Home.vue')
       },
       {
-        path: 'users',
-        name: 'Users',
-        component: () => import('../views/Users.vue')
-      },
-      {
         path: 'charging-piles',
         name: 'ChargingPiles',
         component: () => import('../views/ChargingPiles.vue')

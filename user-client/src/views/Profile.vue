@@ -20,14 +20,14 @@
                 <span class="value">{{ userInfo.username }}</span>
               </div>
               <div class="info-item">
-                <span class="label">注册时间：</span>
-                <span class="value">{{ userInfo.registerTime }}</span>
+                <span class="label">车牌号：</span>
+                <span class="value">{{ userInfo.carNumber }}</span>
               </div>
               <div class="info-item">
-                <span class="label">账户余额：</span>
-                <span class="value">¥{{ userInfo.balance }}</span>
-              </div>
+                <span class="label">电池容量：</span>
+                <span class="value">{{ userInfo.batteryCapacity }}</span>
             </div>
+          </div>
           </el-card>
         </el-col>
       </el-row>
@@ -76,6 +76,8 @@
   </template>
   
   <script>
+  import { getUserInfo } from '@/api/user'
+
   export default {
     name: 'Profile',
     data() {
@@ -89,9 +91,12 @@
       
       return {
         userInfo: {
-          username: 'test_user',
-          registerTime: '2024-03-15',
-          balance: 100.00
+          id: null,
+          username: '',
+          carNumber: '',
+          batteryCapacity: 0,
+          registerTime: '',
+          balance: 0
         },
         passwordForm: {
           oldPassword: '',
@@ -115,7 +120,29 @@
         passwordDialogVisible: false
       }
     },
+    created() {
+      this.fetchUserInfo()
+    },
     methods: {
+      async fetchUserInfo() {
+        try {
+          // 从localStorage获取用户ID
+          const userId = localStorage.getItem('userId')
+          if (!userId) {
+            this.$message.error('用户未登录')
+            return
+          }
+          
+          const response = await getUserInfo(userId)
+          if (response.data.code === 200) {
+            this.userInfo = response.data.data
+          } else {
+            this.$message.error(response.data.message || '获取用户信息失败')
+          }
+        } catch (error) {
+          this.$message.error('获取用户信息失败：' + error.message)
+        }
+      },
       showPasswordDialog() {
         this.passwordDialogVisible = true
         this.$nextTick(() => {

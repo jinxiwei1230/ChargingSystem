@@ -35,7 +35,7 @@ export function getAheadNumber(userId) {
   })
 }
 
-// 修改充电模式
+// 修改充电模式，已实现
 export function modifyChargingMode(data) {
   return request({
     url: '/request/modifyMode',
@@ -44,7 +44,7 @@ export function modifyChargingMode(data) {
   })
 }
 
-// 修改充电量
+// 修改充电量，已实现
 export function modifyChargingAmount(data) {
   return request({
     url: '/request/modifyAmount',
@@ -95,6 +95,15 @@ export function handlePileRecovery(pileId) {
     url: '/request/fault/recovery',
     method: 'post',
     params: { pileId }
+  })
+}
+
+// 获取用户充电请求列表
+export function getUserRequests(userId) {
+  return request({
+    url: '/user/requests',
+    method: 'get',
+    params: { userId }
   })
 }
 
