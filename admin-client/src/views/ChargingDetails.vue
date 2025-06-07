@@ -1,6 +1,83 @@
 <template>
     <div class="charging-details-container">
-      <el-card>
+      <!-- 报表数据卡片 -->
+      <el-card class="report-card">
+        <div slot="header" class="header">
+          <span>充电报表数据</span>
+          <div class="header-actions">
+            <el-select v-model="reportTimeType" placeholder="时间类型" style="width: 120px" @change="handleReportTimeChange">
+              <el-option label="今日" value="day"></el-option>
+              <el-option label="本周" value="week"></el-option>
+              <el-option label="本月" value="month"></el-option>
+            </el-select>
+            <el-select v-model="reportPileId" placeholder="选择充电桩" style="width: 150px; margin-left: 10px" @change="handleReportPileChange">
+              <el-option label="所有充电桩" value=""></el-option>
+              <el-option v-for="pile in chargingPiles" :key="pile.id" :label="pile.id" :value="pile.id"></el-option>
+            </el-select>
+          </div>
+        </div>
+        
+        <div v-loading="reportLoading">
+          <!-- 单桩报表 -->
+          <div v-if="reportPileId && pileReportData.length > 0">
+            <el-table :data="pileReportData" border style="width: 100%">
+              <el-table-column prop="pileId" label="充电桩编号" width="120"></el-table-column>
+              <el-table-column label="统计时间段" width="350">
+                <template slot-scope="scope">
+                  {{ scope.row.startTime }} 至 {{ scope.row.endTime }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="totalChargingCount" label="充电次数" width="100"></el-table-column>
+              <el-table-column prop="totalChargingDuration" label="充电时长(小时)" width="140"></el-table-column>
+              <el-table-column prop="totalChargingAmount" label="充电量(度)" width="120"></el-table-column>
+              <el-table-column prop="totalChargingFee" label="充电费用(元)" width="140"></el-table-column>
+              <el-table-column prop="totalServiceFee" label="服务费用(元)" width="140"></el-table-column>
+              <el-table-column prop="totalFee" label="总费用(元)" width="120"></el-table-column>
+            </el-table>
+          </div>
+          
+          <!-- 系统总体报表 -->
+          <div v-else-if="!reportPileId && systemReportData">
+            <!-- 汇总数据卡片 -->
+            <el-card class="summary-card" shadow="never">
+              <div slot="header">
+                <span>系统总体数据</span>
+              </div>
+              <el-descriptions border :column="4">
+                <el-descriptions-item label="统计时间" :span="4">
+                  {{ systemReportData.summary.startTime }} 至 {{ systemReportData.summary.endTime }}
+                </el-descriptions-item>
+                <el-descriptions-item label="充电次数">{{ systemReportData.summary.totalChargingCount }}</el-descriptions-item>
+                <el-descriptions-item label="充电时长(小时)">{{ systemReportData.summary.totalChargingDuration }}</el-descriptions-item>
+                <el-descriptions-item label="充电量(度)">{{ systemReportData.summary.totalChargingAmount }}</el-descriptions-item>
+                <el-descriptions-item label="总费用(元)">{{ systemReportData.summary.totalFee }}</el-descriptions-item>
+              </el-descriptions>
+            </el-card>
+            
+            <!-- 各充电桩详情 -->
+            <div class="pile-details-title">各充电桩详情</div>
+            <el-table :data="systemReportData.pileDetails" border style="width: 100%">
+              <el-table-column prop="pileId" label="充电桩编号" width="120"></el-table-column>
+              <el-table-column label="统计时间段" width="350">
+                <template slot-scope="scope">
+                  {{ scope.row.startTime }} 至 {{ scope.row.endTime }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="totalChargingCount" label="充电次数" width="100"></el-table-column>
+              <el-table-column prop="totalChargingDuration" label="充电时长(小时)" width="140"></el-table-column>
+              <el-table-column prop="totalChargingAmount" label="充电量(度)" width="120"></el-table-column>
+              <el-table-column prop="totalChargingFee" label="充电费用(元)" width="140"></el-table-column>
+              <el-table-column prop="totalServiceFee" label="服务费用(元)" width="140"></el-table-column>
+              <el-table-column prop="totalFee" label="总费用(元)" width="120"></el-table-column>
+            </el-table>
+          </div>
+          
+          <el-empty v-else description="暂无报表数据"></el-empty>
+        </div>
+      </el-card>
+      
+      <!-- 充电详单卡片 -->
+      <el-card class="details-card">
         <div slot="header" class="header">
           <span>充电详单</span>
           <div class="header-actions">
@@ -33,9 +110,6 @@
               style="width: 200px; margin-left: 10px"
               @input="handleSearch">
             </el-input>
-            <el-button type="primary" @click="exportDetails" style="margin-left: 10px">
-              导出数据
-            </el-button>
           </div>
         </div>
         
@@ -269,11 +343,22 @@
   
   <script>
   import { getUserOrders, getOrderDetailList, getOrderInfo, OrderStatus, OrderStatusMap } from '@/api/order'
+  import { getChargingPileReport, getChargingSystemSummaryReport } from '@/api/tables'
+  import { getAllChargingPiles } from '@/api/charge-pile'
 
   export default {
     name: 'ChargingDetails',
     data() {
       return {
+        // 报表相关数据
+        reportTimeType: 'day',
+        reportPileId: '',
+        reportLoading: false,
+        pileReportData: [],
+        systemReportData: null,
+        chargingPiles: [],
+
+        // 原有详单相关数据
         loading: false,
         dateRange: [],
         searchKeyword: '',
@@ -319,6 +404,82 @@
       }
     },
     methods: {
+      // 报表相关方法
+      async fetchChargingPiles() {
+        try {
+          const response = await getAllChargingPiles()
+          if (response.code === 200) {
+            this.chargingPiles = response.data
+          }
+        } catch (error) {
+          this.$message.error('获取充电桩列表失败：' + error.message)
+        }
+      },
+      
+      async fetchPileReport() {
+        this.reportLoading = true
+        try {
+          const params = {
+            timeType: this.reportTimeType
+          }
+          if (this.reportPileId) {
+            params.pileId = this.reportPileId
+          }
+          
+          const response = await getChargingPileReport(params)
+          if (response.code === 200) {
+            this.pileReportData = response.data
+            this.systemReportData = null
+          } else {
+            this.$message.error(response.message || '获取充电桩报表失败')
+          }
+        } catch (error) {
+          console.error('获取充电桩报表出错：', error)
+          this.$message.error('获取充电桩报表失败：' + error.message)
+        } finally {
+          this.reportLoading = false
+        }
+      },
+      
+      async fetchSystemReport() {
+        this.reportLoading = true
+        try {
+          const params = {
+            timeType: this.reportTimeType
+          }
+          
+          const response = await getChargingSystemSummaryReport(params)
+          if (response.code === 200) {
+            this.systemReportData = response.data
+            this.pileReportData = []
+          } else {
+            this.$message.error(response.message || '获取系统报表失败')
+          }
+        } catch (error) {
+          console.error('获取系统报表出错：', error)
+          this.$message.error('获取系统报表失败：' + error.message)
+        } finally {
+          this.reportLoading = false
+        }
+      },
+      
+      handleReportTimeChange() {
+        if (this.reportPileId) {
+          this.fetchPileReport()
+        } else {
+          this.fetchSystemReport()
+        }
+      },
+      
+      handleReportPileChange() {
+        if (this.reportPileId) {
+          this.fetchPileReport()
+        } else {
+          this.fetchSystemReport()
+        }
+      },
+      
+      // 原有详单相关方法
       getStatusType(status) {
         const typeMap = {
           [OrderStatus.CREATED]: 'info',
@@ -397,13 +558,16 @@
           this.detailListLoading = false
         }
       },
-      exportDetails() {
-        // TODO: 实现导出功能
-        this.$message.success('数据导出成功')
+      
+      // 初始化方法
+      async initData() {
+        await this.fetchChargingPiles()
+        this.fetchSystemReport()
+        this.fetchDetails()
       }
     },
     created() {
-      this.fetchDetails()
+      this.initData()
     }
   }
   </script>
@@ -411,6 +575,12 @@
   <style scoped>
   .charging-details-container {
     padding: 20px;
+  }
+  .report-card {
+    margin-bottom: 20px;
+  }
+  .details-card {
+    margin-top: 20px;
   }
   .header {
     display: flex;
@@ -439,5 +609,16 @@
   .value {
     color: #303133;
     font-weight: bold;
+  }
+  .summary-card {
+    margin-bottom: 20px;
+    background-color: #f8f8f8;
+  }
+  .pile-details-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 20px 0 10px 0;
+    padding-left: 5px;
+    border-left: 4px solid #409EFF;
   }
   </style>

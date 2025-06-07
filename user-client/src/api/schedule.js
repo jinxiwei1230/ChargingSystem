@@ -53,7 +53,7 @@ export function modifyChargingAmount(data) {
   })
 }
 
-// 取消充电并回到等候区重新排队
+// 取消充电并回到等候区重新排队，已实现
 export function cancelAndRequeue(userId) {
   return request({
     url: '/request/cancelAndRequeue',
@@ -62,7 +62,7 @@ export function cancelAndRequeue(userId) {
   })
 }
 
-// 取消充电并离开
+// 取消充电并离开，已实现
 export function cancelAndLeave(userId) {
   return request({
     url: '/request/cancelAndLeave',
@@ -98,7 +98,7 @@ export function handlePileRecovery(pileId) {
   })
 }
 
-// 获取用户充电请求列表
+// 获取用户充电请求列表，已实现
 export function getUserRequests(userId) {
   return request({
     url: '/user/requests',

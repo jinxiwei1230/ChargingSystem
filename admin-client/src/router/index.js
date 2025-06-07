@@ -31,6 +31,11 @@ const routes = [
         component: () => import('../views/ChargingDetails.vue')
       },
       {
+        path: 'charging-queue',
+        name: 'ChargingQueue',
+        component: () => import('../views/ChargingQueue.vue')
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: () => import('../views/Settings.vue')

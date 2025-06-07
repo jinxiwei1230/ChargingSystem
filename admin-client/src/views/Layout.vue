@@ -24,6 +24,10 @@
               <i class="el-icon-lightning"></i>
               <span>充电桩管理</span>
             </el-menu-item>
+            <el-menu-item index="/charging-queue">
+              <i class="el-icon-time"></i>
+              <span>等候车辆信息</span>
+            </el-menu-item>
             <el-menu-item index="/charging-details">
               <i class="el-icon-document"></i>
               <span>充电详单</span>

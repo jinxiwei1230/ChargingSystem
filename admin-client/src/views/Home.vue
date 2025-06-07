@@ -5,32 +5,34 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-item">
-              <div class="stat-title">总用户数</div>
-              <div class="stat-value">{{ statistics.totalUsers }}</div>
+              <div class="stat-title">本月充电次数</div>
+              <div class="stat-value">{{ statistics.monthChargingCount }}</div>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-item">
-              <div class="stat-title">今日充电次数</div>
-              <div class="stat-value">{{ statistics.todayChargingCount }}</div>
+              <div class="stat-title">本月收入</div>
+              <div class="stat-value">¥{{ statistics.monthIncome }}</div>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-item">
-              <div class="stat-title">今日收入</div>
-              <div class="stat-value">¥{{ statistics.todayIncome }}</div>
+              <div class="stat-title">充电桩数量</div>
+              <div class="stat-value">{{ 5 }}</div>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card class="stat-card">
+          <el-card class="stat-card clickable">
             <div class="stat-item">
-              <div class="stat-title">在线充电桩</div>
-              <div class="stat-value">{{ statistics.onlinePiles }}</div>
+              <div class="stat-title">系统设置</div>
+              <el-button type="primary" size="small" @click="openSettingsDialog">
+                查看设置
+              </el-button>
             </div>
           </el-card>
         </el-col>
@@ -92,19 +94,81 @@
           </el-card>
         </el-col>
       </el-row>
+
+      <!-- 系统设置对话框 -->
+      <el-dialog title="系统设置" :visible.sync="settingsDialogVisible" width="40%" :before-close="handleDialogClose">
+        <el-tabs>
+          <el-tab-pane label="电价设置">
+            <div class="settings-content">
+              <div class="setting-item">
+                <div class="setting-label">平时电价</div>
+                <div class="setting-value">{{ priceForm.normalPrice }} <span class="unit">元/度</span></div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-label">峰时电价</div>
+                <div class="setting-value">{{ priceForm.peakPrice }} <span class="unit">元/度</span></div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-label">谷时电价</div>
+                <div class="setting-value">{{ priceForm.valleyPrice }} <span class="unit">元/度</span></div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-label">服务费</div>
+                <div class="setting-value">{{ priceForm.servicePrice }} <span class="unit">元/度</span></div>
+              </div>
+            </div>
+          </el-tab-pane>
+          
+          <el-tab-pane label="时段设置">
+            <div class="settings-content">
+              <div class="setting-item">
+                <div class="setting-label">峰时时段</div>
+                <div class="setting-value">
+                  {{ formatTime(timeForm.peakStart) }} - {{ formatTime(timeForm.peakEnd) }}
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-label">谷时时段</div>
+                <div class="setting-value">
+                  {{ formatTime(timeForm.valleyStart) }} - {{ formatTime(timeForm.valleyEnd) }}
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+          
+          <el-tab-pane label="系统参数">
+            <div class="settings-content">
+              <div class="setting-item">
+                <div class="setting-label">最大等待数量</div>
+                <div class="setting-value">{{ systemForm.maxWaitingCount }} <span class="unit">辆</span></div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-label">快充功率</div>
+                <div class="setting-value">{{ systemForm.fastChargingPower }} <span class="unit">kW/h</span></div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-label">慢充功率</div>
+                <div class="setting-value">{{ systemForm.slowChargingPower }} <span class="unit">kW/h</span></div>
+              </div>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </el-dialog>
     </div>
   </template>
   
   <script>
+  import { getChargingSystemSummaryReport } from '@/api/tables'
+
   export default {
     name: 'Home',
     data() {
       return {
+        loading: false,
+        settingsDialogVisible: false,
         statistics: {
-          totalUsers: 100,
-          todayChargingCount: 25,
-          todayIncome: 1250.00,
-          onlinePiles: 5
+          monthChargingCount: 0,
+          monthIncome: 0,
         },
         chargingPiles: [
           { 
@@ -144,10 +208,36 @@
           { status: 'empty' },
           { status: 'empty' },
           { status: 'empty' }
-        ]
+        ],
+        // 系统设置相关数据
+        priceForm: {
+          normalPrice: 0.7,
+          peakPrice: 1.0,
+          valleyPrice: 0.4,
+          servicePrice: 0.8
+        },
+        timeForm: {
+          peakStart: new Date(2000, 0, 1, 10, 0),
+          peakEnd: new Date(2000, 0, 1, 15, 0),
+          valleyStart: new Date(2000, 0, 1, 23, 0),
+          valleyEnd: new Date(2000, 0, 1, 7, 0)
+        },
+        systemForm: {
+          maxWaitingCount: 10,
+          fastChargingPower: 30,
+          slowChargingPower: 7
+        }
       }
     },
     methods: {
+      openSettingsDialog() {
+        this.settingsDialogVisible = true
+      },
+      
+      handleDialogClose() {
+        this.settingsDialogVisible = false
+      },
+      
       getStatusText(status) {
         const statusMap = {
           working: '工作中',
@@ -171,7 +261,32 @@
             this.$message.error('维修失败：' + error.message)
           }
         }).catch(() => {})
+      },
+
+      // 获取本月统计数据
+      async fetchMonthlyStatistics() {
+        try {
+          const response = await getChargingSystemSummaryReport({ timeType: 'month' })
+          if (response.code === 200 && response.data && response.data.summary) {
+            const summary = response.data.summary
+            this.statistics.monthChargingCount = summary.totalChargingCount || 0
+            this.statistics.monthIncome = summary.totalFee || 0
+          }
+        } catch (error) {
+          console.error('获取月度统计数据失败：', error)
+        }
+      },
+
+      // 格式化时间显示
+      formatTime(time) {
+        if (!time) return '--:--'
+        const hours = time.getHours().toString().padStart(2, '0')
+        const minutes = time.getMinutes().toString().padStart(2, '0')
+        return `${hours}:${minutes}`
       }
+    },
+    created() {
+      this.fetchMonthlyStatistics()
     }
   }
   </script>
@@ -241,5 +356,42 @@
   }
   .mt-20 {
     margin-top: 20px;
+  }
+  .time-separator {
+    margin: 0 10px;
+  }
+  .clickable {
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .clickable:hover {
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  }
+  .settings-content {
+    padding: 10px 0;
+  }
+  .setting-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 16px;
+  }
+  .setting-item:last-child {
+    border-bottom: none;
+  }
+  .setting-label {
+    color: #606266;
+    font-weight: 500;
+  }
+  .setting-value {
+    color: #303133;
+    font-weight: bold;
+  }
+  .unit {
+    font-size: 14px;
+    color: #909399;
+    font-weight: normal;
+    margin-left: 4px;
   }
   </style>
