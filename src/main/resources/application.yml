@@ -87,3 +87,8 @@ charging-station:
           end: '07:00:00'
           price: 0.40
       service-rate: 0.80  # 服务费单价（元/度）
+
+# 定时任务配置
+scheduling:
+  task:
+    interval: 5000  # 定时任务执行间隔（毫秒）

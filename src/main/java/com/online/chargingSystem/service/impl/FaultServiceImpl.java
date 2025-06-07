@@ -79,7 +79,8 @@ public class FaultServiceImpl implements FaultService {
     }
 
     @Override
-    @Scheduled(fixedRate = 5000)
+//    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRateString = "${scheduling.task.interval}")
     public void scheduledHandleFaultQueue() {
         if (!faultHandlingEnabled || currentFaultStrategy == null) {
             return;
@@ -268,7 +269,8 @@ public class FaultServiceImpl implements FaultService {
     }
 
     @Override
-    @Scheduled(fixedRate = 5000)
+//    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRateString = "${scheduling.task.interval}")
     public void scheduledHandleFaultRecoveryQueue() {
         if (!faultRecoveryEnabled) {
             return;

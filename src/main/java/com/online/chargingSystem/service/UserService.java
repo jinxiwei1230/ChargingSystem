@@ -1,6 +1,8 @@
 package com.online.chargingSystem.service;
 
 import com.online.chargingSystem.entity.User;
+import com.online.chargingSystem.entity.ChargingRequest;
+import java.util.List;
 
 public interface UserService {
 
@@ -18,4 +20,18 @@ public interface UserService {
      * @return
      */
     User registService(User user);
+
+    /**
+     * 获取用户信息
+     * @param userId 用户ID
+     * @return 用户信息
+     */
+    User getUserInfo(Long userId);
+
+    /**
+     * 获取用户充电请求列表
+     * @param userId 用户ID
+     * @return 充电请求列表
+     */
+    List<ChargingRequest> getUserChargingRequests(Long userId);
 }
