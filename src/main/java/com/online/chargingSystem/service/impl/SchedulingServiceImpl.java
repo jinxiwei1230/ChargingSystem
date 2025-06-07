@@ -546,20 +546,4 @@ public class SchedulingServiceImpl implements SchedulingService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
-
-    @Override
-    public Map<String, List<ChargingRequest>> getAllPileQueues() {
-        // 获取所有充电桩队列
-        Map<String, Queue<Long>> pileQueues = chargingPileQueueService.getPileQueues();
-        
-        // 转换为ChargingRequest列表
-        return pileQueues.entrySet().stream()
-                .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> entry.getValue().stream()
-                            .map(chargingRequestMapper::findById)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList())
-                ));
-    }
 } 
