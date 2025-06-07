@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Lazy;
 import com.online.chargingSystem.entity.User;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -578,5 +579,55 @@ public class ChargingPileServiceImpl implements ChargingPileService {
     @Override
     public List<ChargingPile> findAll() {
         return chargingPileMapper.findAll();
+    }
+
+    @Override
+    public Map<String, List<ChargingQueueInfoDTO>> getAllChargingQueues() {
+        // 获取所有充电桩
+        List<ChargingPile> allPiles = chargingPileMapper.findAll();
+        
+        // 按充电桩类型分组
+        Map<String, List<ChargingQueueInfoDTO>> result = new HashMap<>();
+        
+        // 获取每个充电桩的队列信息
+        for (ChargingPile pile : allPiles) {
+            // 获取充电桩的等候队列
+            Queue<Long> queue = chargingPileQueueService.getQueueRequests(pile.getId());
+            List<ChargingQueueInfoDTO> queueInfoList = new ArrayList<>();
+            
+            if (queue != null && !queue.isEmpty()) {
+                int position = 1;
+                // 跳过第一个请求（正在充电的）
+                boolean isFirst = true;
+                for (Long requestId : queue) {
+                    if (isFirst) {
+                        isFirst = false;
+                        continue;
+                    }
+                    
+                    ChargingRequest request = chargingRequestMapper.findById(requestId);
+                    if (request != null) {
+                        User user = userMapper.selectById(request.getUserId());
+                        if (user != null) {
+                            ChargingQueueInfoDTO dto = new ChargingQueueInfoDTO();
+                            dto.setPileId(pile.getId());
+                            dto.setUserId(request.getUserId());
+                            dto.setCarNumber(user.getCarNumber());
+                            dto.setBatteryCapacity(user.getBatteryCapacity());
+                            dto.setRequestAmount(request.getAmount());
+                            dto.setQueueJoinTime(request.getQueueJoinTime());
+                            dto.setWaitingTime(schedulingService.calculateWaitingTime(pile.getId()));
+                            dto.setQueuePosition(position++);
+                            queueInfoList.add(dto);
+                        }
+                    }
+                }
+            }
+            
+            // 即使队列为空，也添加到结果中
+            result.put(pile.getId(), queueInfoList);
+        }
+        
+        return result;
     }
 } 
