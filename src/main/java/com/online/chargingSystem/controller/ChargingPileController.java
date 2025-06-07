@@ -187,6 +187,27 @@ public class ChargingPileController {
     }
 
     /**
+     * 获取所有充电桩信息
+     * @return 所有充电桩信息列表
+     */
+    @GetMapping("/all")
+    public Result<List<ChargingPile>> getAllChargingPiles() {
+        List<ChargingPile> result = chargingPileService.findAll();
+        return Result.success(result);
+    }
+
+    /**
+     * 获取所有充电桩的等候队列信息（按充电桩分类）
+     * @return 按充电桩分类的等候队列信息
+     */
+    @GetMapping("/all-queues")
+    public Result<Map<String, List<ChargingQueueInfoDTO>>> getAllChargingQueues() {
+        Map<String, List<ChargingQueueInfoDTO>> result = chargingPileService.getAllChargingQueues();
+        return Result.success(result);
+    }
+
+    
+    /**
      * 获取充电桩等候队列详细信息
      * @param pileId 充电桩ID
      * @return 等候队列详细信息
@@ -197,15 +218,6 @@ public class ChargingPileController {
         return Result.success(result);
     }
 
-    /**
-     * 获取所有充电桩信息
-     * @return 所有充电桩信息列表
-     */
-    @GetMapping("/all")
-    public Result<List<ChargingPile>> getAllChargingPiles() {
-        List<ChargingPile> result = chargingPileService.findAll();
-        return Result.success(result);
-    }
 }
 
 @Data

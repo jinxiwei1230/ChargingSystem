@@ -85,5 +85,11 @@ public interface ChargingPileService {
      */
     List<ChargingQueueInfoDTO> getChargingQueueDetails(String pileId);
 
+    /**
+     * 获取所有充电桩的等候队列信息（按充电桩类型分类）
+     * @return 按充电桩类型分类的等候队列信息
+     */
+    Map<String, List<ChargingQueueInfoDTO>> getAllChargingQueues();
+
     List<ChargingPile> findAll();
 } 
