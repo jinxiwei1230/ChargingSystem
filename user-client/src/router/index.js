@@ -55,11 +55,11 @@ const router = new VueRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
+  const userInfo = localStorage.getItem('userInfo')
   if (to.path === '/login' || to.path === '/register') {
     next()
   } else {
-    if (!token) {
+    if (!userInfo) {
       next('/login')
     } else {
       next()

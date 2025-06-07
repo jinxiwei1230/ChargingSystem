@@ -5,13 +5,14 @@
           <el-card>
             <div slot="header">
               <span>个人信息</span>
-              <el-button 
+              <!-- 暂时不需要 -->
+              <!-- <el-button 
                 type="primary" 
                 size="small" 
                 style="float: right"
                 @click="showPasswordDialog">
                 修改密码
-              </el-button>
+              </el-button> -->
             </div>
             <div class="user-info">
               <div class="info-item">

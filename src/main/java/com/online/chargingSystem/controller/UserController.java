@@ -7,7 +7,10 @@ import com.online.chargingSystem.service.UserService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 用户控制器
@@ -15,6 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = "http://localhost:8081")
 public class UserController {
     @Resource
     private UserService userService;
@@ -51,7 +55,7 @@ public class UserController {
         newUser.setUsername(username);
         newUser.setPassword(password);
         newUser.setCarNumber(carNumber);
-        
+
         User user = userService.registService(newUser);
         if(user!=null){
             return Result.success("注册成功！",user);
