@@ -50,6 +50,22 @@
             <span class="label">前车等待数量：</span>
             <span class="value">{{ queueInfo.waitingCount }}辆</span>
           </div>
+          <!-- 充电进度 -->
+          <div v-if="queueInfo.status === 'CHARGING'" class="detail-item charging-progress">
+            <span class="label">充电进度：</span>
+            <div class="progress-container">
+              <el-progress 
+                :percentage="parseFloat(chargingProgress.percentage)" 
+                status="success"
+                :format="percentageFormat"
+                style="color: black;width: 200px; height: 20px;">
+                <!-- 搞了半天居然是width和height的原因？！ -->
+              </el-progress>
+              <div class="progress-status">
+                <span>充电进度：{{ chargingProgress.percentage }}% </span>
+              </div>
+            </div>
+          </div>
         </div>
         
         <el-divider></el-divider>
@@ -256,7 +272,8 @@ import {
   cancelAndLeave,
   getUserRequests,
   submitChargingRequest,
-  finishCharging
+  finishCharging,
+  getChargingPower
 } from '@/api/schedule'
 import { mapGetters } from 'vuex'
 
@@ -271,6 +288,11 @@ export default {
         amount: 0
       },
       timer: null,
+      progressTimer: null,
+      chargingProgress: {
+        percentage: '0',
+        status: 'UNSTART'
+      },
       dialogVisible: false,
       waitingQueueData: [],
       modifyDialogVisible: false,
@@ -324,6 +346,9 @@ export default {
     if (this.timer) {
       clearInterval(this.timer)
     }
+    if (this.progressTimer) {
+      clearInterval(this.progressTimer)
+    }
   },
   methods: {
     async fetchQueueInfo() {
@@ -359,6 +384,22 @@ export default {
             waitingCount: 0
           }
           
+          // 如果状态是充电中，开始获取充电进度
+          if (latestRequest.status === 'CHARGING') {
+            // 清除之前的定时器并创建新的
+            if (this.progressTimer) {
+              clearInterval(this.progressTimer)
+            }
+            this.fetchChargingProgress() // 立即获取一次
+            this.progressTimer = setInterval(this.fetchChargingProgress, 5000) // 每5秒更新一次
+          } else {
+            // 如果不是充电中状态，清除进度定时器
+            if (this.progressTimer) {
+              clearInterval(this.progressTimer)
+              this.progressTimer = null
+            }
+          }
+          
           // 只在状态为等待时才获取前车等待数量
           if (latestRequest.status === 'WAITING_IN_WAITING_AREA' || 
               latestRequest.status === 'WAITING_IN_CHARGING_AREA') {
@@ -381,6 +422,11 @@ export default {
       } else {
         // 处理请求失败或没有记录的情况
         this.queueInfo = null
+        // 清除进度定时器
+        if (this.progressTimer) {
+          clearInterval(this.progressTimer)
+          this.progressTimer = null
+        }
         this.noRequestDialogVisible = true
       }
     },
@@ -572,6 +618,42 @@ export default {
       } catch (error) {
         this.$message.error('结束充电失败：' + error.message)
       }
+    },
+    // 充电进度百分比格式化
+    percentageFormat(percentage) {
+      return percentage + '%'
+    },
+    
+    
+    // 获取充电状态文本
+    getChargingStatusText(status) {
+      const statusMap = {
+        'CHARGING': '充电中',
+        'UNSTART': '未开始',
+        'FAULTED': '故障中',
+        'COMPLETED': '已完成'
+      }
+      return statusMap[status] || status
+    },
+    
+    // 获取充电进度
+    async fetchChargingProgress() {
+      if (!this.queueInfo || !this.queueInfo.id || this.queueInfo.status !== 'CHARGING') {
+        return
+      }
+      
+      try {
+        const response = await getChargingPower(this.queueInfo.id)
+        if (response.code === 200) {
+          this.chargingProgress = response.data
+          // this.chargingProgress.percentage = response.data.percentage
+          // this.chargingProgress.status = response.data.status
+          console.log(this.chargingProgress.percentage)
+          console.log(typeof this.chargingProgress.percentage);
+        }
+      } catch (error) {
+        console.error('获取充电进度失败:', error)
+      }
     }
   }
 }
@@ -624,5 +706,18 @@ export default {
   text-align: center;
   font-size: 16px;
   padding: 20px;
+}
+.charging-progress {
+  margin-top: 10px;
+}
+.progress-container {
+  display: flex;
+  align-items: center;
+}
+.progress-status {
+  margin-left: 10px;
+}
+.progress-container {
+  width: 100%; /* 确保有宽度 */
 }
 </style> 

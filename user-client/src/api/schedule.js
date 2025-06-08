@@ -107,3 +107,11 @@ export function getUserRequests(userId) {
   })
 }
 
+// 获取请求当前充电量
+export function getChargingPower(requestId) {
+  return request({
+    url: `/api/charging-requests/charging-power/${requestId}`,
+    method: 'get'
+  })
+}
+
