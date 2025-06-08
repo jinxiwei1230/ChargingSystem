@@ -24,12 +24,13 @@
             
             <el-table v-if="queueList && queueList.length > 0" :data="queueList" border stripe size="small">
               <el-table-column prop="userId" label="用户ID" width="100"></el-table-column>
+              <el-table-column prop="carNumber" label="车牌号" width="120"></el-table-column>
               <el-table-column prop="batteryCapacity" label="电池容量(度)" width="120"></el-table-column>
               <el-table-column prop="requestAmount" label="请求充电量(度)" width="130"></el-table-column>
-              <el-table-column prop="queueNumber" label="队列号" width="100"></el-table-column>
+              <el-table-column prop="queuePosition" label="队列位置" width="100"></el-table-column>
               <el-table-column label="等待时长" width="180">
                 <template slot-scope="scope">
-                  {{ formatWaitingDuration(scope.row.waitingDuration) }}
+                  {{ formatWaitingTime(scope.row.waitingTime) }}
                 </template>
               </el-table-column>
               <el-table-column label="加入队列时间" width="180">
@@ -37,7 +38,6 @@
                   {{ formatDateTime(scope.row.queueJoinTime) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="requestId" label="请求ID" width="100"></el-table-column>
             </el-table>
             <el-empty v-else description="暂无等候车辆"></el-empty>
           </div>
@@ -46,12 +46,13 @@
           <!-- 显示单个充电桩的队列详细信息 -->
           <el-table v-if="queueDetails && queueDetails.length > 0" :data="queueDetails" border>
             <el-table-column prop="userId" label="用户ID" width="100"></el-table-column>
+            <el-table-column prop="carNumber" label="车牌号" width="120"></el-table-column>
             <el-table-column prop="batteryCapacity" label="电池容量(度)" width="120"></el-table-column>
             <el-table-column prop="requestAmount" label="请求充电量(度)" width="130"></el-table-column>
-            <el-table-column prop="queueNumber" label="队列号" width="100"></el-table-column>
+            <el-table-column prop="queuePosition" label="队列位置" width="100"></el-table-column>
             <el-table-column label="等待时长" width="180">
               <template slot-scope="scope">
-                {{ formatWaitingDuration(scope.row.waitingDuration) }}
+                {{ formatWaitingTime(scope.row.waitingTime) }}
               </template>
             </el-table-column>
             <el-table-column label="加入队列时间" width="180">
@@ -59,7 +60,6 @@
                 {{ formatDateTime(scope.row.queueJoinTime) }}
               </template>
             </el-table-column>
-            <el-table-column prop="requestId" label="请求ID" width="100"></el-table-column>
             <el-table-column prop="pileId" label="充电桩ID" width="100"></el-table-column>
           </el-table>
           <el-empty v-else description="暂无等候车辆"></el-empty>
@@ -70,7 +70,8 @@
 </template>
 
 <script>
-import { getAllChargingPiles, getAllPileQueueInfo, getChargingQueueDetails } from '@/api/charge-pile'
+import { getAllChargingPiles } from '@/api/charge-pile'
+import { getAllChargingPileQueues, getChargingPileQueueDetails } from '@/api/car-waiting-info'
 
 export default {
   name: 'ChargingQueue',
@@ -108,7 +109,7 @@ export default {
     async fetchAllPileQueueInfo() {
       this.loading = true
       try {
-        const response = await getAllPileQueueInfo()
+        const response = await getAllChargingPileQueues()
         if (response.code === 200) {
           this.queueInfo = response.data
         } else {
@@ -126,7 +127,7 @@ export default {
     async fetchChargingQueueDetails(pileId) {
       this.loading = true
       try {
-        const response = await getChargingQueueDetails(pileId)
+        const response = await getChargingPileQueueDetails(pileId)
         if (response.code === 200) {
           this.queueDetails = response.data
         } else {
@@ -149,15 +150,16 @@ export default {
       }
     },
     
-    // 格式化等待时长（秒转为时分秒）
-    formatWaitingDuration(seconds) {
-      if (seconds == null || seconds === undefined) return '未知'
+    // 格式化等待时长（小时转为时分秒）
+    formatWaitingTime(hours) {
+      if (hours == null || hours === undefined) return '未知'
       
-      const hours = Math.floor(seconds / 3600)
-      const minutes = Math.floor((seconds % 3600) / 60)
-      const remainSeconds = seconds % 60
+      const totalSeconds = Math.floor(hours * 3600)
+      const hoursValue = Math.floor(totalSeconds / 3600)
+      const minutes = Math.floor((totalSeconds % 3600) / 60)
+      const seconds = totalSeconds % 60
       
-      return `${hours}小时${minutes}分钟${remainSeconds}秒`
+      return `${hoursValue}小时${minutes}分钟${seconds}秒`
     },
     
     // 格式化日期时间

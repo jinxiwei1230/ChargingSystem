@@ -22,7 +22,7 @@
           <el-card class="stat-card">
             <div class="stat-item">
               <div class="stat-title">充电桩数量</div>
-              <div class="stat-value">{{ 5 }}</div>
+              <div class="stat-value">{{ chargingPiles.length }}</div>
             </div>
           </el-card>
         </el-col>
@@ -46,45 +46,26 @@
               <span>充电站实时状态</span>
             </div>
             <div class="station-status">
-              <div class="charging-area">
+              <div class="charging-area" v-loading="pileLoading">
                 <h3>充电区</h3>
                 <el-row :gutter="20">
                   <el-col :span="8" v-for="pile in chargingPiles" :key="pile.id">
-                    <el-card :class="['pile-card', pile.status]">
+                    <el-card :class="['pile-card', getPileStatusClass(pile.status)]">
                       <div class="pile-info">
                         <h4>{{ pile.id }}号充电桩</h4>
-                        <p>类型：{{ pile.type === 'fast' ? '快充' : '慢充' }}</p>
-                        <p>状态：{{ getStatusText(pile.status) }}</p>
-                        <p v-if="pile.status === 'working'">
-                          当前用户：{{ pile.currentUser }}
-                        </p>
-                        <p v-if="pile.status === 'working'">
-                          已充电量：{{ pile.chargedPower }}度
-                        </p>
+                        <p>类型：{{ pile.type === 'FAST' ? '快充' : '慢充' }}</p>
+                        <p>状态：{{ getPileStatusText(pile.status) }}</p>
+                        <p>功率：{{ pile.chargingPower }} kW</p>
+                        <p>累计充电次数：{{ pile.chargingTimes }} 次</p>
+                        <p>累计充电时长：{{ pile.totalChargingDuration.toFixed(1) }} 小时</p>
+                        <p>累计充电量：{{ pile.totalChargingAmount.toFixed(1) }} 度</p>
                         <el-button 
-                          v-if="pile.status === 'fault'"
+                          v-if="pile.status === 'FAULT'"
                           type="primary" 
                           size="small"
                           @click="handleRepair(pile)">
                           维修
                         </el-button>
-                      </div>
-                    </el-card>
-                  </el-col>
-                </el-row>
-              </div>
-              
-              <div class="waiting-area">
-                <h3>等候区</h3>
-                <el-row :gutter="20">
-                  <el-col :span="8" v-for="(spot, index) in waitingSpots" :key="index">
-                    <el-card :class="['spot-card', spot.status]">
-                      <div class="spot-info">
-                        <h4>{{ index + 1 }}号车位</h4>
-                        <p>状态：{{ spot.status === 'empty' ? '空闲' : '占用' }}</p>
-                        <p v-if="spot.status === 'occupied'">
-                          等待用户：{{ spot.waitingUser }}
-                        </p>
                       </div>
                     </el-card>
                   </el-col>
@@ -159,56 +140,20 @@
   
   <script>
   import { getChargingSystemSummaryReport } from '@/api/tables'
+  import { getAllChargingPiles, handleChargingPileFault, handleChargingPileRecovery } from '@/api/charge-pile'
 
   export default {
     name: 'Home',
     data() {
       return {
         loading: false,
+        pileLoading: false,
         settingsDialogVisible: false,
         statistics: {
           monthChargingCount: 0,
           monthIncome: 0,
         },
-        chargingPiles: [
-          { 
-            id: 'A', 
-            type: 'fast', 
-            status: 'working',
-            currentUser: 'user001',
-            chargedPower: 15.5
-          },
-          { 
-            id: 'B', 
-            type: 'fast', 
-            status: 'idle'
-          },
-          { 
-            id: 'C', 
-            type: 'slow', 
-            status: 'working',
-            currentUser: 'user002',
-            chargedPower: 8.2
-          },
-          { 
-            id: 'D', 
-            type: 'slow', 
-            status: 'fault'
-          },
-          { 
-            id: 'E', 
-            type: 'slow', 
-            status: 'idle'
-          }
-        ],
-        waitingSpots: [
-          { status: 'occupied', waitingUser: 'user003' },
-          { status: 'empty' },
-          { status: 'occupied', waitingUser: 'user004' },
-          { status: 'empty' },
-          { status: 'empty' },
-          { status: 'empty' }
-        ],
+        chargingPiles: [],
         // 系统设置相关数据
         priceForm: {
           normalPrice: 0.7,
@@ -238,14 +183,28 @@
         this.settingsDialogVisible = false
       },
       
-      getStatusText(status) {
-        const statusMap = {
-          working: '工作中',
-          idle: '空闲',
-          fault: '故障'
+      getPileStatusClass(status) {
+        const classMap = {
+          'AVAILABLE': 'available',
+          'IN_USE': 'working',
+          'MAINTENANCE': 'maintenance',
+          'FAULT': 'fault',
+          'OFFLINE': 'offline'
         }
-        return statusMap[status] || status
+        return classMap[status] || 'unknown'
       },
+      
+      getPileStatusText(status) {
+        const statusMap = {
+          'AVAILABLE': '空闲',
+          'IN_USE': '使用中',
+          'MAINTENANCE': '维护中',
+          'FAULT': '故障',
+          'OFFLINE': '离线'
+        }
+        return statusMap[status] || '未知'
+      },
+      
       handleRepair(pile) {
         this.$confirm('确认维修该充电桩吗？', '提示', {
           confirmButtonText: '确定',
@@ -253,14 +212,70 @@
           type: 'warning'
         }).then(async () => {
           try {
-            // 这里应该调用API进行维修
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            pile.status = 'idle'
-            this.$message.success('维修成功')
+            // 调用故障处理API
+            if (pile.status === 'FAULT') {
+              // 询问用户选择调度策略
+              this.$confirm('请选择调度策略', '调度策略选择', {
+                confirmButtonText: '优先级调度',
+                cancelButtonText: '时间顺序调度',
+                distinguishCancelAndClose: true,
+                type: 'info'
+              }).then(async () => {
+                // 优先级调度
+                const response = await handleChargingPileFault(pile.id, 'PRIORITY')
+                if (response.code === 200) {
+                  this.$message.success('故障已处理，采用优先级调度')
+                  this.fetchChargingPiles() // 刷新充电桩状态
+                } else {
+                  this.$message.error(response.message || '故障处理失败')
+                }
+              }).catch(action => {
+                if (action === 'cancel') {
+                  // 时间顺序调度
+                  handleChargingPileFault(pile.id, 'TIME_ORDER').then(response => {
+                    if (response.code === 200) {
+                      this.$message.success('故障已处理，采用时间顺序调度')
+                      this.fetchChargingPiles() // 刷新充电桩状态
+                    } else {
+                      this.$message.error(response.message || '故障处理失败')
+                    }
+                  }).catch(error => {
+                    this.$message.error('故障处理失败：' + error.message)
+                  })
+                }
+              })
+            } else if (pile.status === 'MAINTENANCE') {
+              // 处理维护完成，恢复充电桩
+              const response = await handleChargingPileRecovery(pile.id)
+              if (response.code === 200) {
+                this.$message.success('充电桩已恢复正常')
+                this.fetchChargingPiles() // 刷新充电桩状态
+              } else {
+                this.$message.error(response.message || '恢复充电桩失败')
+              }
+            }
           } catch (error) {
-            this.$message.error('维修失败：' + error.message)
+            this.$message.error('操作失败：' + error.message)
           }
         }).catch(() => {})
+      },
+
+      // 获取充电桩信息
+      async fetchChargingPiles() {
+        this.pileLoading = true
+        try {
+          const response = await getAllChargingPiles()
+          if (response.code === 200) {
+            this.chargingPiles = response.data
+          } else {
+            this.$message.error(response.message || '获取充电桩信息失败')
+          }
+        } catch (error) {
+          console.error('获取充电桩信息出错：', error)
+          this.$message.error('获取充电桩信息失败：' + error.message)
+        } finally {
+          this.pileLoading = false
+        }
       },
 
       // 获取本月统计数据
@@ -286,6 +301,7 @@
       }
     },
     created() {
+      this.fetchChargingPiles()
       this.fetchMonthlyStatistics()
     }
   }
@@ -317,29 +333,29 @@
     flex-direction: column;
     gap: 20px;
   }
-  .charging-area, .waiting-area {
+  .charging-area {
     margin-bottom: 20px;
   }
-  .pile-card, .spot-card {
+  .pile-card {
     margin-bottom: 20px;
     transition: all 0.3s;
   }
   .pile-card.working {
-    border-left: 4px solid #67C23A;
+    border-left: 4px solid #E6A23C;
   }
-  .pile-card.idle {
-    border-left: 4px solid #909399;
+  .pile-card.available {
+    border-left: 4px solid #67C23A;
   }
   .pile-card.fault {
     border-left: 4px solid #F56C6C;
   }
-  .spot-card.empty {
+  .pile-card.maintenance {
+    border-left: 4px solid #409EFF;
+  }
+  .pile-card.offline {
     border-left: 4px solid #909399;
   }
-  .spot-card.occupied {
-    border-left: 4px solid #E6A23C;
-  }
-  .pile-info, .spot-info {
+  .pile-info {
     text-align: center;
   }
   h3 {

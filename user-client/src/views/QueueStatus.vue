@@ -66,15 +66,18 @@
             @click="showCancelDialog">
             取消排队
           </el-button>
+          <el-button type="success" @click="handleFinishCharging" :disabled="queueInfo.status !== 'CHARGING'">
+            结束充电
+          </el-button>
           <el-button type="success" @click="getWaitingQueue">
-            查看排队情况
+            查看等候区排队
           </el-button>
         </div>
       </div>
     </el-card>
     
     <el-empty v-else description="暂无排队信息">
-      <el-button type="primary" @click="goToChargingRequest">
+      <el-button type="primary" @click="goToChargingRequestPage">
         去提交充电请求
       </el-button>
     </el-empty>
@@ -221,6 +224,24 @@
         </el-button>
       </span>
     </el-dialog>
+
+    <!-- 无充电请求提示对话框 -->
+    <el-dialog
+      title="提示"
+      :visible.sync="noRequestDialogVisible"
+      width="30%"
+      :show-close="false"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false">
+      <div class="no-request-content">
+        <p>当前没有充电请求，请提交</p>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="goToChargingRequestPage">
+          去提交充电请求
+        </el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -234,7 +255,8 @@ import {
   cancelAndRequeue,
   cancelAndLeave,
   getUserRequests,
-  submitChargingRequest
+  submitChargingRequest,
+  finishCharging
 } from '@/api/schedule'
 import { mapGetters } from 'vuex'
 
@@ -276,7 +298,8 @@ export default {
           { required: true, message: '请输入充电量', trigger: 'blur' },
           { type: 'number', min: 0, message: '充电量必须大于0', trigger: 'blur' }
         ]
-      }
+      },
+      noRequestDialogVisible: false
     }
   },
   computed: {
@@ -295,7 +318,7 @@ export default {
   created() {
     this.fetchQueueInfo()
     // 每1秒刷新一次排队信息
-    this.timer = setInterval(this.fetchQueueInfo, 1000)
+    this.timer = setInterval(this.fetchQueueInfo, 30000)
   },
   beforeDestroy() {
     if (this.timer) {
@@ -304,41 +327,61 @@ export default {
   },
   methods: {
     async fetchQueueInfo() {
-      try {
-        if (!this.userId) {
-          this.$message.error('用户未登录')
-          return
+      // 不再使用try-catch包裹整个方法，避免API错误被自动转为消息提示
+      if (!this.userId) {
+        return
+      }
+      
+      // 创建一个不会触发全局错误处理的请求版本
+      const fetchRequestsSafely = async () => {
+        try {
+          const response = await getUserRequests(this.userId)
+          return { success: true, data: response }
+        } catch (error) {
+          return { success: false, error }
         }
+      }
+      
+      // 安全地获取请求列表
+      const result = await fetchRequestsSafely()
+      
+      // 处理成功响应
+      if (result.success && result.data.code === 200 && result.data.data && result.data.data.length > 0) {
+        // 获取最新的请求（id最大的）
+        const latestRequest = result.data.data.reduce((prev, current) => 
+          (prev.id > current.id) ? prev : current
+        )
         
-        // 获取用户充电请求列表
-        const response = await getUserRequests(this.userId)
-        if (response.code === 200 && response.data && response.data.length > 0) {
-          // 获取最新的请求（id最大的）
-          const latestRequest = response.data.reduce((prev, current) => 
-            (prev.id > current.id) ? prev : current
-          )
+        // 只有当状态发生变化时才更新整个queueInfo
+        if (!this.queueInfo || this.queueInfo.id !== latestRequest.id) {
+          this.queueInfo = {
+            ...latestRequest,
+            waitingCount: 0
+          }
           
-          // 只有当状态发生变化时才更新整个queueInfo
-          if (!this.queueInfo || this.queueInfo.id !== latestRequest.id) {
-            this.queueInfo = {
-              ...latestRequest,
-              waitingCount: 0
-            }
-            
-            // 只在状态为等待时才获取前车等待数量
-            if (latestRequest.status === 'WAITING_IN_WAITING_AREA' || 
-                latestRequest.status === 'WAITING_IN_CHARGING_AREA') {
-              const aheadResponse = await getAheadNumber(this.userId)
-              if (aheadResponse.code === 200) {
-                this.queueInfo.waitingCount = aheadResponse.data
+          // 只在状态为等待时才获取前车等待数量
+          if (latestRequest.status === 'WAITING_IN_WAITING_AREA' || 
+              latestRequest.status === 'WAITING_IN_CHARGING_AREA') {
+            // 安全获取前车等待数量
+            const fetchAheadNumberSafely = async () => {
+              try {
+                const response = await getAheadNumber(this.userId)
+                return { success: true, data: response }
+              } catch (error) {
+                return { success: false, error }
               }
             }
+            
+            const aheadResult = await fetchAheadNumberSafely()
+            if (aheadResult.success && aheadResult.data.code === 200) {
+              this.queueInfo.waitingCount = aheadResult.data.data
+            }
           }
-        } else {
-          this.queueInfo = null
         }
-      } catch (error) {
-        this.$message.error('获取排队信息失败：' + error.message)
+      } else {
+        // 处理请求失败或没有记录的情况
+        this.queueInfo = null
+        this.noRequestDialogVisible = true
       }
     },
     showCancelDialog() {
@@ -392,6 +435,12 @@ export default {
         mode: this.queueInfo.mode,
         amount: this.queueInfo.amount
       }
+    },
+    
+    goToChargingRequestPage() {
+      // 关闭对话框并跳转到充电请求页面
+      this.noRequestDialogVisible = false
+      this.$router.push('/charging-request')
     },
     
     async getWaitingQueue() {
@@ -510,6 +559,19 @@ export default {
       } finally {
         this.newRequestLoading = false
       }
+    },
+    async handleFinishCharging() {
+      try {
+        const response = await finishCharging(this.userId)
+        if (response.code === 200) {
+          this.$message.success('充电结束')
+          this.fetchQueueInfo() // 刷新状态
+        } else {
+          this.$message.error(response.message || '结束充电失败')
+        }
+      } catch (error) {
+        this.$message.error('结束充电失败：' + error.message)
+      }
     }
   }
 }
@@ -557,5 +619,10 @@ export default {
 }
 .cancel-options .el-button {
   margin: 10px;
+}
+.no-request-content {
+  text-align: center;
+  font-size: 16px;
+  padding: 20px;
 }
 </style> 

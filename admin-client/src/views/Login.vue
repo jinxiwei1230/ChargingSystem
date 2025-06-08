@@ -27,8 +27,8 @@
     data() {
       return {
         loginForm: {
-          username: '',
-          password: ''
+          username: 'admin',
+          password: 'admin'
         },
         rules: {
           username: [
@@ -73,5 +73,11 @@
   }
   .login-card {
     width: 400px;
+  }
+  .login-tip {
+    text-align: center;
+    color: #909399;
+    font-size: 14px;
+    margin-top: 10px;
   }
   </style>

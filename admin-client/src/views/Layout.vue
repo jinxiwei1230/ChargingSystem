@@ -32,10 +32,10 @@
               <i class="el-icon-document"></i>
               <span>充电详单</span>
             </el-menu-item>
-            <el-menu-item index="/settings">
+            <!-- <el-menu-item index="/settings">
               <i class="el-icon-setting"></i>
               <span>系统设置</span>
-            </el-menu-item>
+            </el-menu-item> -->
           </el-menu>
         </el-aside>
         

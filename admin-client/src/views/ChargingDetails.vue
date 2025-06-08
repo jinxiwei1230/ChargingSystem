@@ -187,12 +187,6 @@
                 @click="showDetail(scope.row)">
                 详情
               </el-button>
-              <el-button
-                type="text"
-                size="small"
-                @click="showDetailList(scope.row)">
-                详单
-              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -266,83 +260,11 @@
           </div>
         </div>
       </el-dialog>
-
-      <!-- 详单列表对话框 -->
-      <el-dialog
-        title="充电详单列表"
-        :visible.sync="detailListDialogVisible"
-        width="70%">
-        <el-table
-          :data="detailList"
-          style="width: 100%"
-          v-loading="detailListLoading">
-          <el-table-column
-            prop="periodSeq"
-            label="时段序号"
-            width="100">
-          </el-table-column>
-          <el-table-column
-            prop="periodType"
-            label="时段类型"
-            width="120">
-            <template slot-scope="scope">
-              <el-tag :type="getPeriodType(scope.row.periodType)">
-                {{ scope.row.periodType }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="startTime"
-            label="开始时间"
-            width="180">
-          </el-table-column>
-          <el-table-column
-            prop="endTime"
-            label="结束时间"
-            width="180">
-          </el-table-column>
-          <el-table-column
-            prop="duration"
-            label="时长(小时)"
-            width="120">
-          </el-table-column>
-          <el-table-column
-            prop="kwh"
-            label="电量(度)"
-            width="120">
-          </el-table-column>
-          <el-table-column
-            prop="chargeRate"
-            label="充电费率"
-            width="120">
-          </el-table-column>
-          <el-table-column
-            prop="serviceRate"
-            label="服务费率"
-            width="120">
-          </el-table-column>
-          <el-table-column
-            prop="chargeFee"
-            label="充电费用"
-            width="120">
-          </el-table-column>
-          <el-table-column
-            prop="serviceFee"
-            label="服务费用"
-            width="120">
-          </el-table-column>
-          <el-table-column
-            prop="subTotal"
-            label="小计"
-            width="120">
-          </el-table-column>
-        </el-table>
-      </el-dialog>
     </div>
   </template>
   
   <script>
-  import { getUserOrders, getOrderDetailList, getOrderInfo, OrderStatus, OrderStatusMap } from '@/api/order'
+  import { getUserOrders, getOrderInfo, OrderStatus, OrderStatusMap } from '@/api/order'
   import { getChargingPileReport, getChargingSystemSummaryReport } from '@/api/tables'
   import { getAllChargingPiles } from '@/api/charge-pile'
 
@@ -368,10 +290,7 @@
         total: 0,
         details: [],
         orderDialogVisible: false,
-        detailListDialogVisible: false,
         currentOrder: null,
-        detailList: [],
-        detailListLoading: false,
         OrderStatus,
         OrderStatusMap,
         pickerOptions: {
@@ -490,14 +409,6 @@
         }
         return typeMap[status] || 'info'
       },
-      getPeriodType(type) {
-        const typeMap = {
-          'PEAK': 'danger',
-          'VALLEY': 'success',
-          'NORMAL': 'info'
-        }
-        return typeMap[type] || 'info'
-      },
       handleDateChange() {
         this.fetchDetails()
       },
@@ -544,18 +455,6 @@
           this.orderDialogVisible = true
         } catch (error) {
           this.$message.error('获取订单详情失败：' + error.message)
-        }
-      },
-      async showDetailList(row) {
-        this.detailListLoading = true
-        try {
-          const response = await getOrderDetailList(row.orderId)
-          this.detailList = response.data
-          this.detailListDialogVisible = true
-        } catch (error) {
-          this.$message.error('获取详单列表失败：' + error.message)
-        } finally {
-          this.detailListLoading = false
         }
       },
       

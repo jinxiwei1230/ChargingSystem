@@ -2,8 +2,16 @@
   <div class="charging-details-container">
     <el-card>
       <div slot="header" class="header">
-        <span>充电详单</span>
+        <span>充电订单列表</span>
         <div class="header-actions">
+          <el-select v-model="orderStatus" placeholder="订单状态" style="width: 120px; margin-right: 10px">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="已创建" value="CREATED"></el-option>
+            <el-option label="充电中" value="CHARGING"></el-option>
+            <el-option label="已完成" value="COMPLETED"></el-option>
+            <el-option label="已取消" value="CANCELLED"></el-option>
+            <el-option label="故障" value="FAULTED"></el-option>
+          </el-select>
           <el-date-picker
             v-model="dateRange"
             type="daterange"
@@ -15,7 +23,7 @@
           </el-date-picker>
           <el-input
             v-model="searchKeyword"
-            placeholder="搜索详单编号"
+            placeholder="搜索订单编号"
             style="width: 200px; margin-left: 10px"
             @input="handleSearch">
           </el-input>
@@ -23,64 +31,79 @@
       </div>
       
       <el-table
-        :data="filteredDetails"
+        :data="ordersList"
         style="width: 100%"
-        v-loading="loading">
+        v-loading="loading"
+        @row-click="showOrderDetail">
         <el-table-column
-          prop="id"
-          label="请求编号"
-          width="150">
-        </el-table-column>
-        <el-table-column
-          prop="chargingPileId"
-          label="充电桩编号"
-          width="150">
-          <template slot-scope="scope">
-            {{ scope.row.chargingPileId || '未分配' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="mode"
-          label="充电模式"
-          width="150">
-          <template slot-scope="scope">
-            {{ scope.row.mode === 'FAST' ? '快充' : '慢充' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="amount"
-          label="充电量(度)"
-          width="150">
-        </el-table-column>
-        <el-table-column
-          prop="queueNumber"
-          label="排队号码"
+          prop="orderId"
+          label="订单编号"
           width="180">
         </el-table-column>
         <el-table-column
-          prop="status"
-          label="状态"
-          width="200">
+          prop="pileId"
+          label="充电桩编号"
+          width="120">
+        </el-table-column>
+        <el-table-column
+          prop="carId"
+          label="车牌号"
+          width="120">
+        </el-table-column>
+        <el-table-column
+          prop="orderStatus"
+          label="订单状态"
+          width="100">
           <template slot-scope="scope">
-            <el-tag :type="getStatusType(scope.row.status)">
-              {{ getStatusText(scope.row.status) }}
+            <el-tag :type="getStatusType(scope.row.orderStatus)">
+              {{ getStatusText(scope.row.orderStatus) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column
-          prop="queueJoinTime"
-          label="排队时间"
-          width="180">
+          prop="totalKwh"
+          label="充电量(度)"
+          width="100">
+        </el-table-column>
+        <el-table-column
+          prop="totalDuration"
+          label="充电时长(分钟)"
+          width="120">
+        </el-table-column>
+        <el-table-column
+          prop="totalFee"
+          label="总费用(元)"
+          width="120">
           <template slot-scope="scope">
-            {{ formatDateTime(scope.row.queueJoinTime) }}
+            {{ scope.row.totalFee ? '¥' + scope.row.totalFee : '-' }}
           </template>
         </el-table-column>
         <el-table-column
-          prop="requestTime"
-          label="请求时间"
+          prop="startTime"
+          label="开始时间"
           width="180">
           <template slot-scope="scope">
-            {{ formatDateTime(scope.row.requestTime) }}
+            {{ formatDateTime(scope.row.startTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="endTime"
+          label="结束时间"
+          width="180">
+          <template slot-scope="scope">
+            {{ formatDateTime(scope.row.endTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="120">
+          <template slot-scope="scope">
+            <el-button 
+              type="text" 
+              size="small"
+              @click.stop="showOrderDetail(scope.row)">
+              查看详单
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -98,47 +121,95 @@
       </div>
     </el-card>
     
-    <!-- 详情对话框 -->
+    <!-- 订单详情对话框 -->
     <el-dialog
-      title="充电详单详情"
-      :visible.sync="dialogVisible"
-      width="50%">
-      <div v-if="currentDetail" class="detail-content">
+      title="订单详情"
+      :visible.sync="orderDialogVisible"
+      width="60%">
+      <div v-if="currentOrder" class="detail-content">
+        <h3>基本信息</h3>
+        <div class="detail-grid">
         <div class="detail-item">
-          <span class="label">详单编号：</span>
-          <span class="value">{{ currentDetail.id }}</span>
+            <span class="label">订单编号：</span>
+            <span class="value">{{ currentOrder.orderId }}</span>
         </div>
         <div class="detail-item">
           <span class="label">充电桩编号：</span>
-          <span class="value">{{ currentDetail.pileId }}</span>
+            <span class="value">{{ currentOrder.pileId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">车牌号：</span>
+            <span class="value">{{ currentOrder.carId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">订单状态：</span>
+            <span class="value">
+              <el-tag :type="getStatusType(currentOrder.orderStatus)">
+                {{ getStatusText(currentOrder.orderStatus) }}
+              </el-tag>
+            </span>
         </div>
         <div class="detail-item">
           <span class="label">充电电量：</span>
-          <span class="value">{{ currentDetail.power }}度</span>
+            <span class="value">{{ currentOrder.totalKwh }}度</span>
         </div>
         <div class="detail-item">
           <span class="label">充电时长：</span>
-          <span class="value">{{ currentDetail.duration }}小时</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">启动时间：</span>
-          <span class="value">{{ currentDetail.startTime }}</span>
-        </div>
-        <div class="detail-item">
-          <span class="label">停止时间：</span>
-          <span class="value">{{ currentDetail.endTime }}</span>
+            <span class="value">{{ currentOrder.totalDuration }}分钟</span>
         </div>
         <div class="detail-item">
           <span class="label">充电费用：</span>
-          <span class="value">¥{{ currentDetail.chargingFee }}</span>
+            <span class="value">¥{{ currentOrder.totalChargeFee || '-' }}</span>
         </div>
         <div class="detail-item">
           <span class="label">服务费用：</span>
-          <span class="value">¥{{ currentDetail.serviceFee }}</span>
+            <span class="value">¥{{ currentOrder.totalServiceFee || '-' }}</span>
         </div>
         <div class="detail-item">
           <span class="label">总费用：</span>
-          <span class="value">¥{{ currentDetail.totalFee }}</span>
+            <span class="value">¥{{ currentOrder.totalFee || '-' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">开始时间：</span>
+            <span class="value">{{ formatDateTime(currentOrder.startTime) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">结束时间：</span>
+            <span class="value">{{ formatDateTime(currentOrder.endTime) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">创建时间：</span>
+            <span class="value">{{ formatDateTime(currentOrder.createTime) }}</span>
+          </div>
+        </div>
+        
+        <div v-if="orderDetails.length > 0" class="detail-list">
+          <h3>详单列表</h3>
+          <el-table :data="orderDetails" border>
+            <el-table-column prop="periodSeq" label="时段序号" width="100"></el-table-column>
+            <el-table-column prop="periodType" label="时段类型" width="120">
+              <template slot-scope="scope">
+                {{ getPeriodTypeText(scope.row.periodType) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="开始时间" width="180">
+              <template slot-scope="scope">
+                {{ formatDateTime(scope.row.startTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="结束时间" width="180">
+              <template slot-scope="scope">
+                {{ formatDateTime(scope.row.endTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="duration" label="时长(分钟)" width="120"></el-table-column>
+            <el-table-column prop="kwh" label="充电量(度)" width="120"></el-table-column>
+            <el-table-column prop="chargeRate" label="充电费率" width="120"></el-table-column>
+            <el-table-column prop="serviceRate" label="服务费率" width="120"></el-table-column>
+            <el-table-column prop="chargeFee" label="充电费(元)" width="120"></el-table-column>
+            <el-table-column prop="serviceFee" label="服务费(元)" width="120"></el-table-column>
+            <el-table-column prop="subTotal" label="小计(元)" width="120"></el-table-column>
+          </el-table>
         </div>
       </div>
     </el-dialog>
@@ -146,7 +217,7 @@
 </template>
 
 <script>
-import { getUserRequests } from '@/api/schedule'
+import { getUserOrders, getOrderInfo, getOrderDetailList } from '@/api/user-bill'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -156,12 +227,15 @@ export default {
       loading: false,
       dateRange: [],
       searchKeyword: '',
+      orderStatus: '',
       currentPage: 1,
       pageSize: 10,
       total: 0,
-      details: [],
-      dialogVisible: false,
-      currentDetail: null,
+      ordersList: [],
+      allOrders: [],
+      orderDialogVisible: false,
+      currentOrder: null,
+      orderDetails: [],
       pickerOptions: {
         shortcuts: [{
           text: '最近一周',
@@ -184,72 +258,57 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['userId']),
-    filteredDetails() {
-      let result = this.details
-      
-      // 按关键词搜索
-      if (this.searchKeyword) {
-        result = result.filter(detail => 
-          detail.id.toString().includes(this.searchKeyword) ||
-          detail.queueNumber.includes(this.searchKeyword)
-        )
-      }
-      
-      // 按日期范围筛选
-      if (this.dateRange && this.dateRange.length === 2) {
-        const startDate = new Date(this.dateRange[0])
-        const endDate = new Date(this.dateRange[1])
-        endDate.setHours(23, 59, 59, 999)
-        
-        result = result.filter(detail => {
-          const requestTime = new Date(detail.requestTime)
-          return requestTime >= startDate && requestTime <= endDate
-        })
-      }
-      
-      return result
-    }
+    ...mapGetters(['userId'])
   },
   methods: {
+    getPeriodTypeText(type) {
+      const typeMap = {
+        'PEAK': '峰时',
+        'STANDARD': '平时',
+        'VALLEY': '谷时'
+      }
+      return typeMap[type] || type
+    },
     getStatusText(status) {
       const statusMap = {
-        'WAITING_IN_WAITING_AREA': '等候区等待',
-        'WAITING_IN_CHARGING_AREA': '充电区等待',
+        'CREATED': '已创建',
         'CHARGING': '充电中',
         'COMPLETED': '已完成',
-        'CANCELED': '已取消'
+        'CANCELLED': '已取消',
+        'FAULTED': '故障'
       }
       return statusMap[status] || status
     },
     getStatusType(status) {
       const typeMap = {
-        'WAITING_IN_WAITING_AREA': 'warning',
-        'WAITING_IN_CHARGING_AREA': 'info',
+        'CREATED': 'info',
         'CHARGING': 'success',
         'COMPLETED': '',
-        'CANCELED': 'danger'
+        'CANCELLED': 'danger',
+        'FAULTED': 'warning'
       }
       return typeMap[status] || ''
     },
     formatDateTime(dateTimeStr) {
-      if (!dateTimeStr) return ''
+      if (!dateTimeStr) return '-'
       const date = new Date(dateTimeStr)
       return date.toLocaleString()
     },
     handleDateChange() {
-      this.currentPage = 1
+      this.applyFilters()
     },
     handleSearch() {
-      this.currentPage = 1
+      this.applyFilters()
     },
     handleSizeChange(val) {
       this.pageSize = val
+      this.applyFilters()
     },
     handleCurrentChange(val) {
       this.currentPage = val
+      this.applyFilters()
     },
-    async fetchDetails() {
+    async fetchOrders() {
       this.loading = true
       try {
         if (!this.userId) {
@@ -257,26 +316,77 @@ export default {
           return
         }
         
-        const response = await getUserRequests(this.userId)
+        const params = {
+          page: this.currentPage,
+          size: this.pageSize
+        }
+        
+        if (this.orderStatus) {
+          params.status = this.orderStatus
+        }
+        
+        if (this.dateRange && this.dateRange.length === 2) {
+          params.startDate = this.formatDate(this.dateRange[0])
+          params.endDate = this.formatDate(this.dateRange[1])
+        }
+        
+        const response = await getUserOrders(this.userId, params)
         if (response.code === 200) {
-          this.details = response.data
-          this.total = response.data.length
+          this.ordersList = response.data.records
+          this.total = response.data.total
         } else {
-          this.$message.error(response.message || '获取充电请求列表失败')
+          this.$message.error(response.message || '获取订单列表失败')
         }
       } catch (error) {
-        this.$message.error('获取充电请求列表失败：' + error.message)
+        this.$message.error('获取订单列表失败：' + error.message)
       } finally {
         this.loading = false
       }
     },
-    showDetail(row) {
-      this.currentDetail = row
-      this.dialogVisible = true
+    formatDate(date) {
+      const d = new Date(date)
+      let month = '' + (d.getMonth() + 1)
+      let day = '' + d.getDate()
+      const year = d.getFullYear()
+      
+      if (month.length < 2) month = '0' + month
+      if (day.length < 2) day = '0' + day
+      
+      return [year, month, day].join('-')
+    },
+    applyFilters() {
+      this.fetchOrders()
+    },
+    async showOrderDetail(row) {
+      this.loading = true
+      try {
+        const [orderResponse, detailsResponse] = await Promise.all([
+          getOrderInfo(row.orderId),
+          getOrderDetailList(row.orderId)
+        ])
+        
+        if (orderResponse.code === 200) {
+          this.currentOrder = orderResponse.data
+        } else {
+          this.$message.error(orderResponse.message || '获取订单详情失败')
+        }
+        
+        if (detailsResponse.code === 200) {
+          this.orderDetails = detailsResponse.data
+        } else {
+          this.orderDetails = []
+        }
+        
+        this.orderDialogVisible = true
+      } catch (error) {
+        this.$message.error('获取订单详情失败：' + error.message)
+      } finally {
+        this.loading = false
+      }
     }
   },
   created() {
-    this.fetchDetails()
+    this.fetchOrders()
   }
 }
 </script>
@@ -301,9 +411,15 @@ export default {
 .detail-content {
   padding: 20px;
 }
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
 .detail-item {
-  margin: 15px 0;
-  font-size: 16px;
+  margin: 10px 0;
+  font-size: 14px;
 }
 .label {
   color: #606266;
@@ -312,6 +428,9 @@ export default {
 .value {
   color: #303133;
   font-weight: bold;
+}
+.detail-list {
+  margin-top: 20px;
 }
 .el-tag {
   margin-right: 10px;
