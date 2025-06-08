@@ -35,6 +35,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Queue;
+import com.online.chargingSystem.service.ChargingProgressService;
 
 @Service
 public class ChargingPileServiceImpl implements ChargingPileService {
@@ -63,6 +64,9 @@ public class ChargingPileServiceImpl implements ChargingPileService {
     @Autowired
     @Lazy
     private SchedulingService schedulingService;
+
+    @Autowired
+    private ChargingProgressService chargingProgressService;
 
     @Override
     public ChargingPile getPileStatus(String pileId) {
@@ -123,10 +127,14 @@ public class ChargingPileServiceImpl implements ChargingPileService {
                 for (ChargingDetail detail : details) {
                     chargingDetailMapper.insert(detail);
                 }
+
+                // 9. 移除充电进度监控
+                System.out.println("==================充电桩故障，停止监控改请求=================");
+                 chargingProgressService.removeChargingProgress(request.getId());
             }
         }
 
-        // 9. 设置充电桩状态为故障
+        // 10. 设置充电桩状态为故障
         pile.setStatus(ChargingPileStatus.FAULT);
         return chargingPileMapper.update(pile) > 0;
     }
@@ -225,6 +233,8 @@ public class ChargingPileServiceImpl implements ChargingPileService {
             System.out.println("开始充电时间");
             System.out.println(request.getChargingStartTime());
             chargingRequestMapper.update(request);
+            // 5. 启动充电进度监控
+            chargingProgressService.startChargingProgress(requestId);
         }
 
         return true;
@@ -271,10 +281,19 @@ public class ChargingPileServiceImpl implements ChargingPileService {
                 faultOrder.setTotalKwh(faultOrder.getTotalKwh().add(BigDecimal.valueOf(totalKwh)));
                 
                 // 生成故障后的详单
-                List<ChargingDetail> newDetails = generateChargingDetails(faultOrder, pileId);
-                calculateOrderTotalFees(faultOrder, newDetails);
+                List<ChargingDetail> newDetails = generateChargingDetailsAfterFault(faultOrder, pileId);
                 
-                // 保存详单
+                // 获取故障前的详单
+                List<ChargingDetail> oldDetails = chargingDetailMapper.findByOrderId(faultOrder.getOrderId());
+                
+                // 合并所有详单
+                List<ChargingDetail> allDetails = new ArrayList<>(oldDetails);
+                allDetails.addAll(newDetails);
+                
+                // 计算总费用（包括故障前和故障后）
+                calculateOrderTotalFees(faultOrder, allDetails);
+                
+                // 保存新详单
                 for (ChargingDetail detail : newDetails) {
                     chargingDetailMapper.insert(detail);
                 }
@@ -327,10 +346,11 @@ public class ChargingPileServiceImpl implements ChargingPileService {
     }
 
     private String generateOrderId() {
-        // 生成订单号：ORD + 年月日 + 4位随机数
-        return String.format("ORD%s%04d", 
+        // 生成订单号：ORD + 年月日 + 时间戳后4位 + 2位随机数
+        return String.format("ORD%s%04d%02d", 
             LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
-            new Random().nextInt(10000));
+            System.currentTimeMillis() % 10000,
+            new Random().nextInt(100));
     }
 
     private double calculateChargingDuration(ChargingRequest request) {
@@ -408,6 +428,75 @@ public class ChargingPileServiceImpl implements ChargingPileService {
                 
                 System.out.println("--------------------------");
                 System.out.println(detail);
+                details.add(detail);
+                
+                if (remainingKwh <= 0) {
+                    break;
+                }
+            }
+        }
+
+        return details;
+    }
+
+    //生成故障后的详单
+    private List<ChargingDetail> generateChargingDetailsAfterFault(ChargingOrder order, String pileId) {
+        List<ChargingDetail> details = new ArrayList<>();
+        // 获取故障后开始充电的时间
+        ChargingRequest request = chargingRequestMapper.findById(order.getRequestId());
+        LocalDateTime startTime = request.getChargingStartTime();  // 故障后开始充电的时间
+        LocalDateTime endTime = order.getEndTime();  // 充电结束时间
+        double remainingKwh = order.getTotalKwh().doubleValue();
+        int periodSeq = 1;
+
+        // 获取所有电价时段
+        List<PricePeriod> pricePeriods = getPricePeriods();
+        
+        // 按时间顺序遍历每个时段
+        for (PricePeriod period : pricePeriods) {
+            LocalDateTime periodStart = getDateTimeForTime(period.getStart());
+            LocalDateTime periodEnd = getDateTimeForTime(period.getEnd());
+            
+            // 如果充电时间与当前时段有重叠
+            if (startTime.isBefore(periodEnd) && endTime.isAfter(periodStart)) {
+                // 计算重叠时间段的开始和结束时间
+                LocalDateTime overlapStart = startTime.isAfter(periodStart) ? startTime : periodStart;
+                LocalDateTime overlapEnd = endTime.isBefore(periodEnd) ? endTime : periodEnd;
+                
+                // 计算该时段的实际充电时长（分钟）
+                long actualMinutes = ChronoUnit.MINUTES.between(overlapStart, overlapEnd);
+                
+                // 计算充电量（根据充电桩类型设置功率：A和B为快充30kW，C、D、E为慢充7kW）
+                double chargingPower = getChargingPower(pileId);
+                
+                // 将分钟转换为小时用于计算充电量
+                double billingHours = actualMinutes / 60.0;
+                double kwh = billingHours * chargingPower;
+                
+                if (kwh > remainingKwh) {
+                    kwh = remainingKwh;
+                }
+                remainingKwh -= kwh;
+
+                // 创建详单
+                ChargingDetail detail = new ChargingDetail();
+                detail.setOrderId(order.getOrderId());
+                detail.setPeriodSeq(periodSeq++);
+                detail.setPeriodType(period.getType());
+                detail.setStartTime(overlapStart);
+                detail.setEndTime(overlapEnd);
+                detail.setDuration(BigDecimal.valueOf(actualMinutes));
+                detail.setKwh(BigDecimal.valueOf(kwh));
+                detail.setChargeRate(BigDecimal.valueOf(period.getPrice()));
+                detail.setServiceRate(BigDecimal.valueOf(0.8)); // 服务费单价固定为0.8元/度
+                
+                // 计算该时段的费用
+                BigDecimal chargeFee = detail.getKwh().multiply(detail.getChargeRate());
+                BigDecimal serviceFee = detail.getKwh().multiply(detail.getServiceRate());
+                detail.setChargeFee(chargeFee);
+                detail.setServiceFee(serviceFee);
+                detail.setSubTotal(chargeFee.add(serviceFee));
+                
                 details.add(detail);
                 
                 if (remainingKwh <= 0) {
