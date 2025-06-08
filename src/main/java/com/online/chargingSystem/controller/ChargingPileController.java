@@ -6,7 +6,6 @@ import com.online.chargingSystem.service.ChargingPileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import lombok.Data;
-import com.online.chargingSystem.dto.ChargingPileQueueDTO;
 import com.online.chargingSystem.dto.ChargingReportDTO;
 import com.online.chargingSystem.dto.ChargingReportSummaryDTO;
 import com.online.chargingSystem.dto.ChargingQueueInfoDTO;
@@ -111,27 +110,6 @@ public class ChargingPileController {
     public Result<?> queryPileState(@RequestParam String pileId) {
         ChargingPile result = chargingPileService.queryPileState(pileId);
         return result != null ? Result.success(result) : Result.error("查询失败");
-    }
-
-    /**
-     * 获取所有充电桩的等候队列信息
-     * @return 所有充电桩的等候队列信息
-     */
-    @GetMapping("/queue-info")
-    public Result<Map<String, List<ChargingPileQueueDTO>>> getAllPileQueueInfo() {
-        Map<String, List<ChargingPileQueueDTO>> result = chargingPileService.getAllPileQueueInfo();
-        return Result.success(result);
-    }
-
-    /**
-     * 获取指定充电桩的等候队列信息
-     * @param pileId 充电桩ID
-     * @return 指定充电桩的等候队列信息
-     */
-    @GetMapping("/{pileId}/queue-info")
-    public Result<List<ChargingPileQueueDTO>> getPileQueueInfo(@PathVariable String pileId) {
-        List<ChargingPileQueueDTO> result = chargingPileService.getPileQueueInfo(pileId);
-        return Result.success(result);
     }
 
     /**

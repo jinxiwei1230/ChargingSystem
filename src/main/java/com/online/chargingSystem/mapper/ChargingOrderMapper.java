@@ -4,6 +4,7 @@ import com.online.chargingSystem.entity.ChargingOrder;
 import com.online.chargingSystem.entity.enums.OrderStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -117,4 +118,11 @@ public interface ChargingOrderMapper {
      * @return 充电订单
      */
     ChargingOrder findByRequestIdAndStatus(@Param("requestId") Long requestId, @Param("status") OrderStatus status);
+
+    /**
+     * 根据请求ID查找订单
+     * @param requestId 充电请求ID
+     * @return 充电订单
+     */
+    ChargingOrder findByRequestId(Long requestId);
 } 
