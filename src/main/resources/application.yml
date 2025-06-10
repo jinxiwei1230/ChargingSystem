@@ -35,12 +35,14 @@ logging:
     org.mybatis: WARN
   file:
     name: logs/charging-system.log
-    max-size: 50MB
-    max-history: 30
-    total-size-cap: 1GB
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 30
+      total-size-cap: 1GB
 
 # 充电站配置
 charging-station:

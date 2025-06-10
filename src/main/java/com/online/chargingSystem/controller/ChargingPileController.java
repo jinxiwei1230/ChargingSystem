@@ -295,7 +295,7 @@ public class ChargingPileController {
                                     new PricePeriod(3, PeriodType.STANDARD, "15:00:00", "18:00:00", 0.70),
                                     new PricePeriod(4, PeriodType.PEAK, "18:00:00", "21:00:00", 1.00),
                                     new PricePeriod(5, PeriodType.STANDARD, "21:00:00", "23:00:00", 0.70),
-                                    new PricePeriod(6, PeriodType.VALLEY, "23:00:00", "07:00:00", 4.00)
+                                    new PricePeriod(6, PeriodType.VALLEY, "23:00:00", "07:00:00", 0.40)
                                 );
                                 
                                 // 获取当前时间
