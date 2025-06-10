@@ -143,6 +143,8 @@
         FROM charging_order
         WHERE request_id = #{requestId}
         AND order_status = #{status}
+        ORDER BY create_time DESC
+        LIMIT 1
     </select>
     
 </mapper> 

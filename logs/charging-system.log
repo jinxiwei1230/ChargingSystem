@@ -1,0 +1,72 @@
+2025-06-10 23:21:12.770 [main] INFO  c.o.c.ChargingSystemApplication - Starting ChargingSystemApplication using Java 17.0.12 with PID 8456 (C:\Users\xiwei\Desktop\软件工程\ChargingSystem\target\classes started by xiwei in C:\Users\xiwei\Desktop\软件工程\ChargingSystem)
+2025-06-10 23:21:12.771 [main] INFO  c.o.c.ChargingSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2025-06-10 23:21:13.543 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-06-10 23:21:13.543 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.41]
+2025-06-10 23:21:13.587 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-06-10 23:21:14.293 [main] INFO  c.o.c.ChargingSystemApplication - Started ChargingSystemApplication in 1.951 seconds (process running for 2.427)
+2025-06-10 23:21:14.314 [scheduling-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Starting...
+2025-06-10 23:21:14.424 [scheduling-1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariCP - Added connection com.mysql.cj.jdbc.ConnectionImpl@46039319
+2025-06-10 23:21:14.426 [scheduling-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Start completed.
+2025-06-10 23:21:19.919 [http-nio-8080-exec-2] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-06-10 23:21:23.820 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 开始获取所有充电桩队列的完整充电状态信息
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 A 的完整队列信息：
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 A 共有 0 个请求在队列中
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 B 的完整队列信息：
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 B 共有 0 个请求在队列中
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 C 的完整队列信息：
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 C 共有 0 个请求在队列中
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 D 的完整队列信息：
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 D 共有 0 个请求在队列中
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 E 的完整队列信息：
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 充电桩 E 共有 0 个请求在队列中
+2025-06-10 23:21:23.822 [http-nio-8080-exec-3] INFO  c.o.c.c.ChargingPileController - 所有充电桩队列完整状态获取完成
+2025-06-10 23:21:24.983 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 开始获取所有充电桩队列的完整充电状态信息
+2025-06-10 23:21:24.986 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 A 的完整队列信息：
+2025-06-10 23:21:24.990 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 当前时间: 23:21:24.990045500
+2025-06-10 23:21:24.992 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 找到当前时段(跨天): 23:00:00 - 07:00:00, 电价: 4.0
+2025-06-10 23:21:24.992 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 费用计算: 充电量=0.0kWh, 电价=4.0元/度, 电费=0.0元, 服务费=0.0元, 总费用=0.0元
+2025-06-10 23:21:24.994 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 A - 用户ID: 1, 车牌号: 京A12345, 状态: CHARGING, 当前充电量: 0.00kWh, 目标充电量: 2.00kWh, 完成度: 0.0%, 队列位置: 1, 电费: 0.00元, 服务费: 0.00元, 总费用: 0.00元
+2025-06-10 23:21:24.994 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 A 共有 1 个请求在队列中
+2025-06-10 23:21:24.994 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 B 的完整队列信息：
+2025-06-10 23:21:24.995 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 B 共有 0 个请求在队列中
+2025-06-10 23:21:24.995 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 C 的完整队列信息：
+2025-06-10 23:21:24.995 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 C 共有 0 个请求在队列中
+2025-06-10 23:21:24.995 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 D 的完整队列信息：
+2025-06-10 23:21:24.995 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 D 共有 0 个请求在队列中
+2025-06-10 23:21:24.995 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 E 的完整队列信息：
+2025-06-10 23:21:24.996 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 充电桩 E 共有 0 个请求在队列中
+2025-06-10 23:21:24.996 [http-nio-8080-exec-4] INFO  c.o.c.c.ChargingPileController - 所有充电桩队列完整状态获取完成
+2025-06-10 23:21:26.084 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 开始获取所有充电桩队列的完整充电状态信息
+2025-06-10 23:21:26.087 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 A 的完整队列信息：
+2025-06-10 23:21:26.089 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 当前时间: 23:21:26.089598900
+2025-06-10 23:21:26.090 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 找到当前时段(跨天): 23:00:00 - 07:00:00, 电价: 4.0
+2025-06-10 23:21:26.090 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 费用计算: 充电量=0.008333333333333333kWh, 电价=4.0元/度, 电费=0.03333333333333333元, 服务费=0.006666666666666667元, 总费用=0.039999999999999997元
+2025-06-10 23:21:26.092 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 A - 用户ID: 1, 车牌号: 京A12345, 状态: CHARGING, 当前充电量: 0.01kWh, 目标充电量: 2.00kWh, 完成度: 0.4%, 队列位置: 1, 电费: 0.03元, 服务费: 0.01元, 总费用: 0.04元
+2025-06-10 23:21:26.092 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 A 共有 1 个请求在队列中
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 B 的完整队列信息：
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 B 共有 0 个请求在队列中
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 C 的完整队列信息：
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 C 共有 0 个请求在队列中
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 D 的完整队列信息：
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 D 共有 0 个请求在队列中
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 E 的完整队列信息：
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 充电桩 E 共有 0 个请求在队列中
+2025-06-10 23:21:26.093 [http-nio-8080-exec-5] INFO  c.o.c.c.ChargingPileController - 所有充电桩队列完整状态获取完成
+2025-06-10 23:21:27.252 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 开始获取所有充电桩队列的完整充电状态信息
+2025-06-10 23:21:27.255 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 A 的完整队列信息：
+2025-06-10 23:21:27.259 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 当前时间: 23:21:27.259904
+2025-06-10 23:21:27.260 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 找到当前时段(跨天): 23:00:00 - 07:00:00, 电价: 4.0
+2025-06-10 23:21:27.260 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 费用计算: 充电量=0.016666666666666666kWh, 电价=4.0元/度, 电费=0.06666666666666667元, 服务费=0.013333333333333334元, 总费用=0.080000000000000004元
+2025-06-10 23:21:27.263 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 A - 用户ID: 1, 车牌号: 京A12345, 状态: CHARGING, 当前充电量: 0.02kWh, 目标充电量: 2.00kWh, 完成度: 0.8%, 队列位置: 1, 电费: 0.07元, 服务费: 0.01元, 总费用: 0.08元
+2025-06-10 23:21:27.263 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 A 共有 1 个请求在队列中
+2025-06-10 23:21:27.263 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 B 的完整队列信息：
+2025-06-10 23:21:27.263 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 B 共有 0 个请求在队列中
+2025-06-10 23:21:27.263 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 C 的完整队列信息：
+2025-06-10 23:21:27.264 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 C 共有 0 个请求在队列中
+2025-06-10 23:21:27.264 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 D 的完整队列信息：
+2025-06-10 23:21:27.264 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 D 共有 0 个请求在队列中
+2025-06-10 23:21:27.264 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 E 的完整队列信息：
+2025-06-10 23:21:27.264 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 充电桩 E 共有 0 个请求在队列中
+2025-06-10 23:21:27.264 [http-nio-8080-exec-6] INFO  c.o.c.c.ChargingPileController - 所有充电桩队列完整状态获取完成
+2025-06-10 23:21:44.886 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Shutdown initiated...
+2025-06-10 23:21:44.890 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Shutdown completed.

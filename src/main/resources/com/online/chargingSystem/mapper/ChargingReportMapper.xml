@@ -15,7 +15,7 @@
             SUM(o.total_service_fee) as totalServiceFee,
             SUM(o.total_fee) as totalFee
         FROM charging_order o
-        WHERE o.order_status = 'COMPLETED'
+        WHERE o.order_status = 'COMPLETED'   # 只包含状态为'COMPLETED'（已完成）的订单
         <if test="pileId != null">
             AND o.pile_id = #{pileId}
         </if>
