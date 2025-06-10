@@ -186,7 +186,7 @@ public class ChargingProgressService {
     }
     
     /**
-     * 获取当前充电进度
+     * 获取当前充电进度（包含故障前的充电量）
      * @param requestId 充电请求ID
      * @return 当前充电量（千瓦时）
      */
@@ -194,6 +194,18 @@ public class ChargingProgressService {
         ChargingProgress progress = chargingProgressMap.get(requestId);
         if (progress == null) return 0.0;
         return getCurrentPower(progress);
+    }
+
+    /**
+     * 获取当前充电量（不包含故障前的充电量）
+     * @param requestId 充电请求ID
+     * @return 当前充电量（千瓦时）
+     */
+    public double getCurrentChargingPower(Long requestId) {
+        ChargingProgress progress = chargingProgressMap.get(requestId);
+        if (progress == null) return 0.0;
+        long seconds = java.time.Duration.between(progress.getStartTime(), LocalDateTime.now()).getSeconds();
+        return (progress.powerRate * seconds) / 3600.0; // 转换为千瓦时
     }
 
     private double getCurrentPower(ChargingProgress progress) {

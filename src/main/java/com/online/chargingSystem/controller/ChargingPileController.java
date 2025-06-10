@@ -1,17 +1,38 @@
 package com.online.chargingSystem.controller;
 
 import com.online.chargingSystem.common.Result;
-import com.online.chargingSystem.entity.ChargingPile;
+import com.online.chargingSystem.dto.ChargingQueueInfoDTO;
 import com.online.chargingSystem.service.ChargingPileService;
+import com.online.chargingSystem.service.ChargingProgressService;
+import com.online.chargingSystem.service.ChargingPileQueueService;
+import com.online.chargingSystem.entity.ChargingPile;
+import com.online.chargingSystem.entity.ChargingRequest;
+import com.online.chargingSystem.entity.ChargingOrder;
+import com.online.chargingSystem.entity.PricePeriod;
+import com.online.chargingSystem.entity.User;
+import com.online.chargingSystem.entity.enums.OrderStatus;
+import com.online.chargingSystem.entity.enums.RequestStatus;
+import com.online.chargingSystem.entity.enums.PeriodType;
+import com.online.chargingSystem.mapper.ChargingRequestMapper;
+import com.online.chargingSystem.mapper.ChargingOrderMapper;
+import com.online.chargingSystem.mapper.UserMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import lombok.Data;
 import com.online.chargingSystem.dto.ChargingReportDTO;
 import com.online.chargingSystem.dto.ChargingReportSummaryDTO;
-import com.online.chargingSystem.dto.ChargingQueueInfoDTO;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.time.format.DateTimeFormatter;
 
 /**
  * 充电桩控制器
@@ -21,8 +42,25 @@ import java.util.Map;
 @RequestMapping("/api/charging-pile")
 public class ChargingPileController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChargingPileController.class);
+
     @Autowired
     private ChargingPileService chargingPileService;
+
+    @Autowired
+    private ChargingProgressService chargingProgressService;
+
+    @Autowired
+    private ChargingPileQueueService chargingPileQueueService;
+
+    @Autowired
+    private ChargingRequestMapper chargingRequestMapper;
+
+    @Autowired
+    private ChargingOrderMapper chargingOrderMapper;
+
+    @Autowired
+    private UserMapper userMapper;
 
     /**
      * 获取充电桩状态
@@ -194,6 +232,169 @@ public class ChargingPileController {
     public Result<List<ChargingQueueInfoDTO>> getChargingQueueDetails(@RequestParam String pileId) {
         List<ChargingQueueInfoDTO> result = chargingPileService.getChargingQueueDetails(pileId);
         return Result.success(result);
+    }
+
+    /**
+     * 获取所有充电桩队列中所有请求（包括正在充电）的充电量信息
+     * @return 每个充电桩队列中所有请求的充电量信息
+     */
+    @GetMapping("/all-queue-charging-status")
+    public Result<?> getAllQueueChargingStatus() {
+        logger.info("开始获取所有充电桩队列的完整充电状态信息");
+        
+        // 获取所有充电桩
+        List<ChargingPile> allPiles = chargingPileService.findAll();
+        Map<String, List<Map<String, Object>>> result = new HashMap<>();
+        
+        // 遍历每个充电桩
+        for (ChargingPile pile : allPiles) {
+            String pileId = pile.getId();
+            List<Map<String, Object>> chargingStatusList = new ArrayList<>();
+            
+            // 获取充电桩的等候队列
+            Queue<Long> queue = chargingPileQueueService.getQueueRequests(pileId);
+            
+            logger.info("充电桩 {} 的完整队列信息：", pileId);
+            
+            if (queue != null && !queue.isEmpty()) {
+                int position = 1;
+                // 遍历所有请求，包括正在充电的
+                for (Long requestId : queue) {
+                    ChargingRequest request = chargingRequestMapper.findById(requestId);
+                    if (request != null) {
+                        User user = userMapper.selectById(request.getUserId());
+                        if (user != null) {
+                            // 获取当前充电量
+                            double currentPower = chargingProgressService.getCurrentChargingPower(request.getId());
+                            double targetPower = request.getAmount();
+                            double percentage = 0.0;
+                            
+                            // 计算当前费用
+                            BigDecimal totalChargeFee = BigDecimal.ZERO;
+                            BigDecimal totalServiceFee = BigDecimal.ZERO;
+                            BigDecimal totalFee = BigDecimal.ZERO;
+                            
+                            // 检查是否存在故障订单
+                            ChargingOrder faultOrder = chargingOrderMapper.findByRequestId(request.getId());
+                            if (faultOrder != null && faultOrder.getOrderStatus() == OrderStatus.FAULTED) {
+                                // 如果存在故障订单，加上故障订单的费用
+                                totalChargeFee = totalChargeFee.add(faultOrder.getTotalChargeFee());
+                                totalServiceFee = totalServiceFee.add(faultOrder.getTotalServiceFee());
+                                totalFee = totalFee.add(faultOrder.getTotalFee());
+                                
+                                // 加上故障订单的充电量
+                                currentPower += faultOrder.getTotalKwh().doubleValue();
+                            }
+                            
+                            // 计算当前时段的费用
+                            if (request.getStatus() == RequestStatus.CHARGING) {
+                                // 获取所有电价时段
+                                List<PricePeriod> pricePeriods = Arrays.asList(
+                                    new PricePeriod(1, PeriodType.STANDARD, "07:00:00", "10:00:00", 0.70),
+                                    new PricePeriod(2, PeriodType.PEAK, "10:00:00", "15:00:00", 1.00),
+                                    new PricePeriod(3, PeriodType.STANDARD, "15:00:00", "18:00:00", 0.70),
+                                    new PricePeriod(4, PeriodType.PEAK, "18:00:00", "21:00:00", 1.00),
+                                    new PricePeriod(5, PeriodType.STANDARD, "21:00:00", "23:00:00", 0.70),
+                                    new PricePeriod(6, PeriodType.VALLEY, "23:00:00", "07:00:00", 4.00)
+                                );
+                                
+                                // 获取当前时间
+                                LocalDateTime now = LocalDateTime.now();
+                                LocalTime currentTime = now.toLocalTime();
+                                logger.info("当前时间: {}", currentTime);
+                                
+                                // 找到当前时段
+                                PricePeriod currentPeriod = null;
+                                for (PricePeriod period : pricePeriods) {
+                                    LocalTime periodStart = LocalTime.parse(period.getStart());
+                                    LocalTime periodEnd = LocalTime.parse(period.getEnd());
+                                    
+                                    // 处理跨天时段
+                                    if (periodStart.isAfter(periodEnd)) {
+                                        // 跨天时段（如23:00-07:00）
+                                        if (currentTime.isAfter(periodStart) || currentTime.isBefore(periodEnd)) {
+                                            currentPeriod = period;
+                                            logger.info("找到当前时段(跨天): {} - {}, 电价: {}", 
+                                                period.getStart(), period.getEnd(), period.getPrice());
+                                            break;
+                                        }
+                                    } else {
+                                        // 普通时段
+                                        if (currentTime.isAfter(periodStart) && currentTime.isBefore(periodEnd)) {
+                                            currentPeriod = period;
+                                            logger.info("找到当前时段: {} - {}, 电价: {}", 
+                                                period.getStart(), period.getEnd(), period.getPrice());
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (currentPeriod != null) {
+                                    // 计算电费
+                                    BigDecimal chargeFee = BigDecimal.valueOf(currentPower * currentPeriod.getPrice());
+                                    // 计算服务费（0.8元/度）
+                                    BigDecimal serviceFee = BigDecimal.valueOf(currentPower * 0.8);
+                                    
+                                    totalChargeFee = totalChargeFee.add(chargeFee);
+                                    totalServiceFee = totalServiceFee.add(serviceFee);
+                                    totalFee = totalChargeFee.add(totalServiceFee);
+                                    
+                                    logger.info("费用计算: 充电量={}kWh, 电价={}元/度, 电费={}元, 服务费={}元, 总费用={}元",
+                                        currentPower, currentPeriod.getPrice(), chargeFee, serviceFee, totalFee);
+                                } else {
+                                    logger.warn("未找到当前时段对应的电价");
+                                }
+                            }
+                            
+                            if (targetPower > 0) {
+                                percentage = (currentPower / targetPower) * 100;
+                                percentage = java.lang.Math.min(percentage, 100.0);
+                            }
+                            
+                            Map<String, Object> chargingStatus = new HashMap<>();
+                            chargingStatus.put("userId", request.getUserId());
+                            chargingStatus.put("carNumber", user.getCarNumber());
+                            chargingStatus.put("currentPower", String.format("%.2f", currentPower));
+                            chargingStatus.put("targetPower", String.format("%.2f", targetPower));
+                            chargingStatus.put("percentage", String.format("%.1f", percentage));
+                            chargingStatus.put("queuePosition", position++);
+                            chargingStatus.put("status", request.getStatus().name());
+                            chargingStatus.put("totalChargeFee", String.format("%.2f", totalChargeFee));
+                            chargingStatus.put("totalServiceFee", String.format("%.2f", totalServiceFee));
+                            chargingStatus.put("totalFee", String.format("%.2f", totalFee));
+                            
+                            chargingStatusList.add(chargingStatus);
+                            
+                            // 记录每个请求的充电状态
+                            logger.info("充电桩 {} - 用户ID: {}, 车牌号: {}, 状态: {}, 当前充电量: {}kWh, 目标充电量: {}kWh, 完成度: {}%, 队列位置: {}, 电费: {}元, 服务费: {}元, 总费用: {}元", 
+                                pileId,
+                                request.getUserId(),
+                                user.getCarNumber(),
+                                request.getStatus().name(),
+                                String.format("%.2f", currentPower),
+                                String.format("%.2f", targetPower),
+                                String.format("%.1f", percentage),
+                                position - 1,
+                                String.format("%.2f", totalChargeFee),
+                                String.format("%.2f", totalServiceFee),
+                                String.format("%.2f", totalFee));
+                        }
+                    }
+                }
+            }
+            
+            result.put(pileId, chargingStatusList);
+            logger.info("充电桩 {} 共有 {} 个请求在队列中", pileId, chargingStatusList.size());
+        }
+        
+        logger.info("所有充电桩队列完整状态获取完成");
+        return Result.success(result);
+    }
+
+    private LocalDateTime getDateTimeForTime(String timeStr) {
+        LocalTime time = LocalTime.parse(timeStr);
+        LocalDate today = LocalDate.now();
+        return LocalDateTime.of(today, time);
     }
 
 }
