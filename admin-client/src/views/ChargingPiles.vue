@@ -112,7 +112,10 @@
           { value: 'PRIORITY', label: '优先级调度' },
           { value: 'TIME_ORDER', label: '时间顺序调度' }
         ],
-        selectedStrategy: 'TIME_ORDER'
+        selectedStrategy: 'TIME_ORDER',
+        // 添加定时刷新相关属性
+        timer: null,
+        refreshInterval: 2000 // 调整为2秒刷新一次
       }
     },
     methods: {
@@ -149,6 +152,7 @@
         })
       },
       handleAdd() {
+        this.clearTimer() // 暂停自动刷新
         this.dialogTitle = '添加充电桩'
         this.form = {
           pileId: '',
@@ -157,6 +161,7 @@
         this.dialogVisible = true
       },
       handleEdit(row) {
+        this.clearTimer() // 暂停自动刷新
         this.dialogTitle = '编辑充电桩参数'
         this.selectedPile = { ...row }
         this.form = {
@@ -186,7 +191,11 @@
               console.error('处理充电桩故障恢复出错：', error)
               this.$message.error('操作失败：' + error.message)
             }
-          }).catch(() => {})
+          }).catch(err => {
+            if (err !== 'cancel') {
+              console.error('对话框操作出错：', err)
+            }
+          })
         } else {
           // 非故障状态转为故障状态，需要选择调度策略
           this.$alert('', '请选择故障处理的调度策略', {
@@ -202,10 +211,15 @@
             },
             dangerouslyUseHTMLString: true,
             message: this.renderStrategySelector()
+          }).catch(err => {
+            if (err !== 'cancel') {
+              console.error('对话框操作出错：', err)
+            }
           })
         }
       },
       handleToggleStatus(row) {
+        this.clearTimer() // 暂停自动刷新
         const newStatus = row.status === 'AVAILABLE' ? 'OFFLINE' : 'AVAILABLE'
         const action = newStatus === 'AVAILABLE' ? '开启' : '关闭'
         const apiMethod = newStatus === 'AVAILABLE' ? powerOnChargingPile : powerOffChargingPile
@@ -219,14 +233,22 @@
               this.$message.success(response.message)
               // 更新本地状态
               row.status = newStatus
+              await this.fetchChargingPiles() // 立即刷新数据
             } else {
               this.$message.error(response.message || `${action}失败`)
             }
           } catch (error) {
             console.error(`${action}充电桩出错：`, error)
             this.$message.error(`${action}失败：` + error.message)
+          } finally {
+            this.startTimer() // 重启自动刷新
           }
-        }).catch(() => {})
+        }).catch(err => {
+          if (err !== 'cancel') {
+            console.error('对话框操作出错：', err)
+          }
+          this.startTimer() // 重启自动刷新
+        })
       },
       handleSubmit() {
         this.$refs.form.validate(async valid => {
@@ -242,6 +264,7 @@
                 if (pile) {
                   pile.chargingPower = this.form.chargingPower
                 }
+                this.startTimer() // 重启自动刷新
               } else {
                 this.$message.error(response.message || '设置参数失败')
               }
@@ -307,10 +330,29 @@
           console.error('处理充电桩故障出错：', error)
           this.$message.error('操作失败：' + error.message)
         }
+      },
+      // 添加定时刷新相关方法
+      startTimer() {
+        this.clearTimer() // 确保先清除可能存在的定时器
+        this.timer = setInterval(() => {
+          if (!this.dialogVisible) { // 只在没有对话框打开时刷新
+            this.fetchChargingPiles()
+          }
+        }, this.refreshInterval)
+      },
+      clearTimer() {
+        if (this.timer) {
+          clearInterval(this.timer)
+          this.timer = null
+        }
       }
     },
     created() {
       this.fetchChargingPiles()
+      this.startTimer()
+    },
+    beforeDestroy() {
+      this.clearTimer()
     }
   }
   </script>

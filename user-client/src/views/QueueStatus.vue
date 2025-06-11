@@ -77,13 +77,15 @@
             :disabled="!canModifyRequest">
             修改请求
           </el-button>
-          <el-button 
+          <el-button
             type="danger" 
-            @click="showCancelDialog">
-            取消排队
+            @click="changeQueue">
+          取消充电并重新排队
           </el-button>
-          <el-button type="success" @click="handleFinishCharging" :disabled="queueInfo.status !== 'CHARGING'">
-            结束充电
+          <el-button 
+            type="success" 
+            @click="handleFinishCharging">
+            取消充电并离开
           </el-button>
           <el-button type="success" @click="getWaitingQueue">
             查看等候区排队
@@ -178,86 +180,6 @@
         <el-button type="primary" @click="handleModify">确 定</el-button>
       </span>
     </el-dialog>
-
-    <!-- 取消充电对话框 -->
-    <el-dialog
-      title="取消充电"
-      :visible.sync="cancelDialogVisible"
-      width="30%">
-      <div class="cancel-options">
-        <p>请选择取消后的操作：</p>
-        <el-button 
-          type="primary" 
-          @click="showNewRequestDialog"
-          :loading="cancelLoading">
-          重新排队
-        </el-button>
-        <el-button 
-          type="danger" 
-          @click="handleCancelAndLeave"
-          :loading="cancelLoading">
-          离开系统
-        </el-button>
-      </div>
-    </el-dialog>
-
-    <!-- 新的充电请求对话框 -->
-    <el-dialog
-      title="提交充电请求"
-      :visible.sync="newRequestDialogVisible"
-      width="30%">
-      <el-form 
-        :model="newRequestForm" 
-        :rules="newRequestRules"
-        ref="newRequestForm" 
-        label-width="100px">
-        <el-form-item label="充电模式" prop="mode">
-          <el-select v-model="newRequestForm.mode" placeholder="请选择充电模式">
-            <el-option
-              v-for="item in modeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="充电量(度)" prop="requestAmount">
-          <el-input-number 
-            v-model="newRequestForm.requestAmount" 
-            :min="0" 
-            :precision="1"
-            :step="0.5">
-          </el-input-number>
-        </el-form-item>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="newRequestDialogVisible = false">取 消</el-button>
-        <el-button 
-          type="primary" 
-          @click="handleNewRequest"
-          :loading="newRequestLoading">
-          提 交
-        </el-button>
-      </span>
-    </el-dialog>
-
-    <!-- 无充电请求提示对话框 -->
-    <el-dialog
-      title="提示"
-      :visible.sync="noRequestDialogVisible"
-      width="30%"
-      :show-close="false"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false">
-      <div class="no-request-content">
-        <p>当前没有充电请求，请提交</p>
-      </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="goToChargingRequestPage">
-          去提交充电请求
-        </el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
@@ -268,12 +190,12 @@ import {
   getAheadNumber, 
   modifyChargingMode, 
   modifyChargingAmount,
-  cancelAndRequeue,
   cancelAndLeave,
   getUserRequests,
   submitChargingRequest,
   finishCharging,
-  getChargingPower
+  getChargingPower,
+  cancelAndRequeue
 } from '@/api/schedule'
 import { mapGetters } from 'vuex'
 
@@ -303,25 +225,7 @@ export default {
       modeOptions: [
         { label: '快充', value: 'FAST' },
         { label: '慢充', value: 'SLOW' }
-      ],
-      cancelDialogVisible: false,
-      cancelLoading: false,
-      newRequestDialogVisible: false,
-      newRequestLoading: false,
-      newRequestForm: {
-        mode: 'FAST',
-        requestAmount: 10.0
-      },
-      newRequestRules: {
-        mode: [
-          { required: true, message: '请选择充电模式', trigger: 'change' }
-        ],
-        requestAmount: [
-          { required: true, message: '请输入充电量', trigger: 'blur' },
-          { type: 'number', min: 0, message: '充电量必须大于0', trigger: 'blur' }
-        ]
-      },
-      noRequestDialogVisible: false
+      ]
     }
   },
   computed: {
@@ -340,7 +244,7 @@ export default {
   created() {
     this.fetchQueueInfo()
     // 每1秒刷新一次排队信息
-    this.timer = setInterval(this.fetchQueueInfo, 30000)
+    this.timer = setInterval(this.fetchQueueInfo, 1000)
   },
   beforeDestroy() {
     if (this.timer) {
@@ -377,11 +281,22 @@ export default {
           (prev.id > current.id) ? prev : current
         )
         
-        // 只有当状态发生变化时才更新整个queueInfo
-        if (!this.queueInfo || this.queueInfo.id !== latestRequest.id) {
+        // 检查关键字段是否发生变化，而不仅仅是ID
+        const isStatusChanged = !this.queueInfo || 
+                               this.queueInfo.id !== latestRequest.id || 
+                               this.queueInfo.status !== latestRequest.status ||
+                               this.queueInfo.amount !== latestRequest.amount ||
+                               this.queueInfo.chargingPileId !== latestRequest.chargingPileId ||
+                               this.queueInfo.chargingStartTime !== latestRequest.chargingStartTime;
+        
+        // 如果关键字段发生变化，则更新整个queueInfo
+        if (isStatusChanged) {
+          // 保存之前的waitingCount值，避免被重置为0后需要等待新请求
+          const prevWaitingCount = this.queueInfo ? this.queueInfo.waitingCount : 0;
+          
           this.queueInfo = {
             ...latestRequest,
-            waitingCount: 0
+            waitingCount: prevWaitingCount
           }
           
           // 如果状态是充电中，开始获取充电进度
@@ -391,7 +306,7 @@ export default {
               clearInterval(this.progressTimer)
             }
             this.fetchChargingProgress() // 立即获取一次
-            this.progressTimer = setInterval(this.fetchChargingProgress, 5000) // 每5秒更新一次
+            this.progressTimer = setInterval(this.fetchChargingProgress, 1000) // 每1秒更新一次
           } else {
             // 如果不是充电中状态，清除进度定时器
             if (this.progressTimer) {
@@ -399,22 +314,26 @@ export default {
               this.progressTimer = null
             }
           }
-          
-          // 只在状态为等待时才获取前车等待数量
-          if (latestRequest.status === 'WAITING_IN_WAITING_AREA' || 
-              latestRequest.status === 'WAITING_IN_CHARGING_AREA') {
-            // 安全获取前车等待数量
-            const fetchAheadNumberSafely = async () => {
-              try {
-                const response = await getAheadNumber(this.userId)
-                return { success: true, data: response }
-              } catch (error) {
-                return { success: false, error }
-              }
+        }
+        
+        // 无论关键状态是否变化，都更新waitingCount
+        // 只在状态为等待时才获取前车等待数量
+        if (latestRequest.status === 'WAITING_IN_WAITING_AREA' || 
+            latestRequest.status === 'WAITING_IN_CHARGING_AREA') {
+          // 安全获取前车等待数量
+          const fetchAheadNumberSafely = async () => {
+            try {
+              const response = await getAheadNumber(this.userId)
+              return { success: true, data: response }
+            } catch (error) {
+              return { success: false, error }
             }
-            
-            const aheadResult = await fetchAheadNumberSafely()
-            if (aheadResult.success && aheadResult.data.code === 200) {
+          }
+          
+          const aheadResult = await fetchAheadNumberSafely()
+          if (aheadResult.success && aheadResult.data.code === 200) {
+            // 直接更新waitingCount，保证即使其他字段没变化，waitingCount也能更新
+            if (this.queueInfo) {
               this.queueInfo.waitingCount = aheadResult.data.data
             }
           }
@@ -427,49 +346,8 @@ export default {
           clearInterval(this.progressTimer)
           this.progressTimer = null
         }
-        this.noRequestDialogVisible = true
       }
     },
-    showCancelDialog() {
-      this.cancelDialogVisible = true
-    },
-    
-    async handleCancelAndRequeue() {
-      try {
-        this.cancelLoading = true
-        const response = await cancelAndRequeue(this.userId)
-        if (response.code === 200) {
-          this.$message.success('已取消充电并重新排队')
-          this.cancelDialogVisible = false
-          this.fetchQueueInfo() // 刷新状态
-        } else {
-          this.$message.error(response.message || '取消失败')
-        }
-      } catch (error) {
-        this.$message.error('取消失败：' + error.message)
-      } finally {
-        this.cancelLoading = false
-      }
-    },
-    
-    async handleCancelAndLeave() {
-      try {
-        this.cancelLoading = true
-        const response = await cancelAndLeave(this.userId)
-        if (response.code === 200) {
-          this.$message.success('已取消充电并离开系统')
-          this.cancelDialogVisible = false
-          this.queueInfo = null
-        } else {
-          this.$message.error(response.message || '取消失败')
-        }
-      } catch (error) {
-        this.$message.error('取消失败：' + error.message)
-      } finally {
-        this.cancelLoading = false
-      }
-    },
-    
     goToChargingRequest() {
       if (!this.canModifyRequest) {
         this.$message.warning('当前状态不允许修改请求')
@@ -484,8 +362,6 @@ export default {
     },
     
     goToChargingRequestPage() {
-      // 关闭对话框并跳转到充电请求页面
-      this.noRequestDialogVisible = false
       this.$router.push('/charging-request')
     },
     
@@ -500,6 +376,42 @@ export default {
         }
       } catch (error) {
         this.$message.error('获取排队情况失败：' + error.message)
+      }
+    },
+    
+    async changeQueue() {
+      try {
+        // 根据当前状态调用不同的接口
+        if (this.queueInfo.status === 'CHARGING') {
+          // 如果是充电状态，先结束充电再重新排队
+          const finishResponse = await finishCharging(this.userId);
+          if (finishResponse.code !== 200) {
+            this.$message.error(finishResponse.message || '结束充电失败');
+            return;
+          }
+          
+          // 结束充电成功后，再重新排队
+          const requeueResponse = await cancelAndRequeue(this.userId);
+          if (requeueResponse.code === 200) {
+            this.$message.success('已结束充电并重新排队');
+            this.fetchQueueInfo(); // 刷新状态
+          } else {
+            this.$message.error(requeueResponse.message || '重新排队失败');
+          }
+        } else if (this.queueInfo.status === 'WAITING_IN_CHARGING_AREA') {
+          // 如果是充电区等待状态，直接重新排队
+          const requeueResponse = await cancelAndRequeue(this.userId);
+          if (requeueResponse.code === 200) {
+            this.$message.success('已取消当前请求并重新排队');
+            this.fetchQueueInfo(); // 刷新状态
+          } else {
+            this.$message.error(requeueResponse.message || '重新排队失败');
+          }
+        } else {
+          this.$message.warning('当前状态无法执行此操作');
+        }
+      } catch (error) {
+        console.log('操作失败：', error.message);
       }
     },
     formatDateTime(dateTimeStr) {
@@ -563,60 +475,33 @@ export default {
         this.$message.error('修改失败：' + error.message)
       }
     },
-    showNewRequestDialog() {
-      this.cancelDialogVisible = false
-      this.newRequestDialogVisible = true
-      // 初始化表单数据
-      this.newRequestForm = {
-        mode: 'FAST',
-        requestAmount: 10.0
-      }
-    },
-    
-    async handleNewRequest() {
-      try {
-        this.$refs.newRequestForm.validate(async valid => {
-          if (valid) {
-            this.newRequestLoading = true
-            // 先取消当前请求
-            const cancelResponse = await cancelAndRequeue(this.userId)
-            if (cancelResponse.code === 200) {
-              // 提交新的充电请求
-              const response = await submitChargingRequest({
-                userId: this.userId,
-                mode: this.newRequestForm.mode,
-                requestAmount: this.newRequestForm.requestAmount
-              })
-              
-              if (response.code === 200) {
-                this.$message.success('充电请求提交成功')
-                this.newRequestDialogVisible = false
-                this.fetchQueueInfo() // 刷新状态
-              } else {
-                this.$message.error(response.message || '充电请求提交失败')
-              }
-            } else {
-              this.$message.error(cancelResponse.message || '取消当前请求失败')
-            }
-          }
-        })
-      } catch (error) {
-        this.$message.error('操作失败：' + error.message)
-      } finally {
-        this.newRequestLoading = false
-      }
-    },
     async handleFinishCharging() {
       try {
-        const response = await finishCharging(this.userId)
-        if (response.code === 200) {
-          this.$message.success('充电结束')
-          this.fetchQueueInfo() // 刷新状态
+        // 根据当前状态调用不同的接口
+        let response;
+        if (this.queueInfo.status === 'WAITING_IN_WAITING_AREA'|| this.queueInfo.status === 'WAITING_IN_CHARGING_AREA') {
+          // 等待状态调用取消并离开接口
+          response = await cancelAndLeave(this.userId);
+          if (response.code === 200) {
+            this.$message.success('已取消充电并离开系统');
+            this.queueInfo = null;
+          } else {
+            this.$message.error(response.message || '取消失败');
+          }
+        } else if (this.queueInfo.status === 'CHARGING') {
+          // 充电状态调用结束充电接口
+          response = await finishCharging(this.userId);
+          if (response.code === 200) {
+            this.$message.success('充电结束');
+            this.fetchQueueInfo(); // 刷新状态
+          } else {
+            this.$message.error(response.message || '结束充电失败');
+          }
         } else {
-          this.$message.error(response.message || '结束充电失败')
+          this.$message.warning('当前状态无法执行此操作');
         }
       } catch (error) {
-        this.$message.error('结束充电失败：' + error.message)
+        this.$message.error('操作失败：' + error.message);
       }
     },
     // 充电进度百分比格式化

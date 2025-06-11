@@ -32,11 +32,8 @@ service.interceptors.response.use(
 
     // 如果返回的状态码不是200，说明接口请求有误
     if (res.code !== 200) {
-      Message({
-        message: res.message || '请求失败',
-        type: 'error',
-        duration: 5 * 1000
-      })
+      // 仅在控制台打印错误，不显示消息提示
+      console.log('API错误:', res.message || '请求失败')
 
       // 401: 未登录或token过期
       if (res.code === 401) {
@@ -49,11 +46,8 @@ service.interceptors.response.use(
   },
   error => {
     console.log('err' + error)
-    Message({
-      message: error.message || '请求失败',
-      type: 'error',
-      duration: 5 * 1000
-    })
+    // 仅在控制台打印错误，不显示消息提示
+    console.log('请求错误:', error.message)
     return Promise.reject(error)
   }
 )
