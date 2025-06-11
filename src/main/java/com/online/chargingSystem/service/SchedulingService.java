@@ -73,8 +73,9 @@ public interface SchedulingService {
     /**
      * 取消充电并回到等候区重新排队
      * @param userId 用户ID
+     * @return 新的充电请求
      */
-    void cancelAndRequeue(Long userId);
+    ChargingRequest cancelAndRequeue(Long userId);
 
     /**
      * 取消充电并离开
