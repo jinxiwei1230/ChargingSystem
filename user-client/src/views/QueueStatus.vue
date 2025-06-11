@@ -79,13 +79,14 @@
           </el-button>
           <el-button
             type="danger" 
-            @click="changeQueue">
-          取消充电并重新排队
+            @click="changeQueue" 
+            :disabled="queueInfo.status === 'CHARGING'">
+          重新排队
           </el-button>
           <el-button 
             type="success" 
             @click="handleFinishCharging">
-            取消充电并离开
+            取消充电
           </el-button>
           <el-button type="success" @click="getWaitingQueue">
             查看等候区排队
