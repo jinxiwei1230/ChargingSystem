@@ -347,7 +347,7 @@ public class SchedulingServiceImpl implements SchedulingService {
     // 取消充电并回到等候区重新排队
     @Override
     @Transactional
-    public void cancelAndRequeue(Long userId) {
+    public ChargingRequest cancelAndRequeue(Long userId) {
         System.out.println("当前队列：");
         printWaitingQueues();
 
@@ -357,9 +357,11 @@ public class SchedulingServiceImpl implements SchedulingService {
         cancel(userId);
 
         // 重新生成新请求并入等候区
-        handleChargingRequest(userId, request.getAmount(), request.getMode());
+        ChargingRequest newrequest = handleChargingRequest(userId, request.getAmount(), request.getMode());
         System.out.println("重新入队后的队列：");
         printWaitingQueues();
+        
+        return newrequest;
     }
 
     // 取消充电并离开

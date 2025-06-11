@@ -124,8 +124,8 @@ public class SchedulingController {
         if (!(schedulingService.isInWaitingArea(userId) || schedulingService.isInChargingArea(userId))) {
             return Result.error("车辆不在等候状态，无法取消充电");
         }
-        schedulingService.cancelAndRequeue(userId);
-        return Result.success("取消充电并重新排队成功");
+        ChargingRequest request = schedulingService.cancelAndRequeue(userId);
+        return Result.success("取消充电并重新排队成功", request);
     }
 
     /**
