@@ -3,7 +3,7 @@ package com.online.chargingSystem.controller;
 import com.online.chargingSystem.service.ChargingProgressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
+//这两个接口没用上
 @RestController
 @RequestMapping("/api/charging-progress")
 public class ChargingProgressController {

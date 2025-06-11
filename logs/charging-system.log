@@ -1,0 +1,12 @@
+2025-06-11 09:12:24.441 [main] INFO  c.o.c.ChargingSystemApplication - Starting ChargingSystemApplication using Java 17.0.12 with PID 19620 (C:\Users\xiwei\Desktop\软件工程\ChargingSystem\target\classes started by xiwei in C:\Users\xiwei\Desktop\软件工程\ChargingSystem)
+2025-06-11 09:12:24.446 [main] INFO  c.o.c.ChargingSystemApplication - No active profile set, falling back to 1 default profile: "default"
+2025-06-11 09:12:25.630 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-06-11 09:12:25.630 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.41]
+2025-06-11 09:12:25.680 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-06-11 09:12:26.415 [main] INFO  c.o.c.ChargingSystemApplication - Started ChargingSystemApplication in 2.454 seconds (process running for 2.973)
+2025-06-11 09:12:26.435 [scheduling-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Starting...
+2025-06-11 09:12:26.569 [scheduling-1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariCP - Added connection com.mysql.cj.jdbc.ConnectionImpl@3bd8ac84
+2025-06-11 09:12:26.570 [scheduling-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Start completed.
+2025-06-11 09:13:14.441 [http-nio-8080-exec-4] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-06-11 09:17:43.928 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Shutdown initiated...
+2025-06-11 09:17:43.934 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariCP - Shutdown completed.
