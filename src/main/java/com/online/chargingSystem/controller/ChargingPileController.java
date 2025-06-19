@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 import lombok.Data;
 import com.online.chargingSystem.dto.ChargingReportDTO;
 import com.online.chargingSystem.dto.ChargingReportSummaryDTO;
+import com.online.chargingSystem.entity.ChargingDetail;
+import com.online.chargingSystem.mapper.ChargingDetailMapper;
 
 import java.util.*;
 import java.math.BigDecimal;
@@ -61,6 +63,9 @@ public class ChargingPileController {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ChargingDetailMapper chargingDetailMapper;
 
     /**
      * 获取充电桩状态
@@ -273,17 +278,16 @@ public class ChargingPileController {
                             BigDecimal totalChargeFee = BigDecimal.ZERO;
                             BigDecimal totalServiceFee = BigDecimal.ZERO;
                             BigDecimal totalFee = BigDecimal.ZERO;
+                            double totalChargedPower = 0.0;
                             
                             // 检查是否存在故障订单
-                            ChargingOrder faultOrder = chargingOrderMapper.findByRequestId(request.getId());
-                            if (faultOrder != null && faultOrder.getOrderStatus() == OrderStatus.FAULTED) {
-                                // 如果存在故障订单，加上故障订单的费用
+                            ChargingOrder faultOrder = chargingOrderMapper.findByRequestIdAndStatus(request.getId(), OrderStatus.FAULTED);
+                            if (faultOrder != null) {
+                                // 直接使用故障订单的费用和充电量
                                 totalChargeFee = totalChargeFee.add(faultOrder.getTotalChargeFee());
                                 totalServiceFee = totalServiceFee.add(faultOrder.getTotalServiceFee());
                                 totalFee = totalFee.add(faultOrder.getTotalFee());
-                                
-                                // 加上故障订单的充电量
-                                currentPower += faultOrder.getTotalKwh().doubleValue();
+                                totalChargedPower = faultOrder.getTotalKwh().doubleValue();
                             }
                             
                             // 计算当前时段的费用
@@ -298,63 +302,57 @@ public class ChargingPileController {
                                     new PricePeriod(6, PeriodType.VALLEY, "23:00:00", "07:00:00", 0.40)
                                 );
                                 
-                                // 获取当前时间
-                                LocalDateTime now = LocalDateTime.now();
-                                LocalTime currentTime = now.toLocalTime();
-                                logger.info("当前时间: {}", currentTime);
+                                // 获取充电开始时间和当前时间
+                                LocalDateTime startTime = request.getChargingStartTime();
+                                LocalDateTime endTime = LocalDateTime.now();
                                 
-                                // 找到当前时段
-                                PricePeriod currentPeriod = null;
-                                for (PricePeriod period : pricePeriods) {
-                                    LocalTime periodStart = LocalTime.parse(period.getStart());
-                                    LocalTime periodEnd = LocalTime.parse(period.getEnd());
-                                    
-                                    // 处理跨天时段
-                                    if (periodStart.isAfter(periodEnd)) {
-                                        // 跨天时段（如23:00-07:00）
-                                        if (currentTime.isAfter(periodStart) || currentTime.isBefore(periodEnd)) {
-                                            currentPeriod = period;
-                                            logger.info("找到当前时段(跨天): {} - {}, 电价: {}", 
-                                                period.getStart(), period.getEnd(), period.getPrice());
-                                            break;
-                                        }
-                                    } else {
-                                        // 普通时段
-                                        if (currentTime.isAfter(periodStart) && currentTime.isBefore(periodEnd)) {
-                                            currentPeriod = period;
-                                            logger.info("找到当前时段: {} - {}, 电价: {}", 
-                                                period.getStart(), period.getEnd(), period.getPrice());
-                                            break;
+                                // 获取充电桩信息
+                                ChargingPile chargingPile = chargingPileService.getPileStatus(pileId);
+                                if (chargingPile != null) {
+                                    // 按时间顺序遍历每个时段
+                                    for (PricePeriod period : pricePeriods) {
+                                        LocalDateTime periodStart = getDateTimeForTime(period.getStart());
+                                        LocalDateTime periodEnd = getDateTimeForTime(period.getEnd());
+                                        
+                                        // 如果充电时间与当前时段有重叠
+                                        if (startTime.isBefore(periodEnd) && endTime.isAfter(periodStart)) {
+                                            // 计算重叠时间段的开始和结束时间
+                                            LocalDateTime overlapStart = startTime.isAfter(periodStart) ? startTime : periodStart;
+                                            LocalDateTime overlapEnd = endTime.isBefore(periodEnd) ? endTime : periodEnd;
+                                            
+                                            // 计算该时段的实际充电时长（分钟）
+                                            long actualMinutes = ChronoUnit.MINUTES.between(overlapStart, overlapEnd);
+                                            
+                                            // 使用充电桩的实际功率
+                                            double chargingPower = chargingPile.getChargingPower();
+                                            double billingHours = actualMinutes / 60.0;
+                                            double kwh = billingHours * chargingPower;
+                                            
+                                            // 计算该时段的费用
+                                            BigDecimal chargeFee = BigDecimal.valueOf(kwh * period.getPrice());
+                                            BigDecimal serviceFee = BigDecimal.valueOf(kwh * 0.8); // 服务费单价固定为0.8元/度
+                                            
+                                            totalChargeFee = totalChargeFee.add(chargeFee);
+                                            totalServiceFee = totalServiceFee.add(serviceFee);
+                                            totalFee = totalChargeFee.add(totalServiceFee);
+                                            totalChargedPower += kwh;
+                                            
+                                            logger.info("时段费用计算: 时段={}-{}, 充电量={}kWh, 电价={}元/度, 电费={}元, 服务费={}元",
+                                                period.getStart(), period.getEnd(), kwh, period.getPrice(), chargeFee, serviceFee);
                                         }
                                     }
-                                }
-                                
-                                if (currentPeriod != null) {
-                                    // 计算电费
-                                    BigDecimal chargeFee = BigDecimal.valueOf(currentPower * currentPeriod.getPrice());
-                                    // 计算服务费（0.8元/度）
-                                    BigDecimal serviceFee = BigDecimal.valueOf(currentPower * 0.8);
-                                    
-                                    totalChargeFee = totalChargeFee.add(chargeFee);
-                                    totalServiceFee = totalServiceFee.add(serviceFee);
-                                    totalFee = totalChargeFee.add(totalServiceFee);
-                                    
-                                    logger.info("费用计算: 充电量={}kWh, 电价={}元/度, 电费={}元, 服务费={}元, 总费用={}元",
-                                        currentPower, currentPeriod.getPrice(), chargeFee, serviceFee, totalFee);
-                                } else {
-                                    logger.warn("未找到当前时段对应的电价");
                                 }
                             }
                             
                             if (targetPower > 0) {
-                                percentage = (currentPower / targetPower) * 100;
+                                percentage = (totalChargedPower / targetPower) * 100;
                                 percentage = java.lang.Math.min(percentage, 100.0);
                             }
                             
                             Map<String, Object> chargingStatus = new HashMap<>();
                             chargingStatus.put("userId", request.getUserId());
                             chargingStatus.put("carNumber", user.getCarNumber());
-                            chargingStatus.put("currentPower", String.format("%.2f", currentPower));
+                            chargingStatus.put("currentPower", String.format("%.2f", totalChargedPower));
                             chargingStatus.put("targetPower", String.format("%.2f", targetPower));
                             chargingStatus.put("percentage", String.format("%.1f", percentage));
                             chargingStatus.put("queuePosition", position++);
@@ -371,7 +369,7 @@ public class ChargingPileController {
                                 request.getUserId(),
                                 user.getCarNumber(),
                                 request.getStatus().name(),
-                                String.format("%.2f", currentPower),
+                                String.format("%.2f", totalChargedPower),
                                 String.format("%.2f", targetPower),
                                 String.format("%.1f", percentage),
                                 position - 1,
@@ -396,6 +394,7 @@ public class ChargingPileController {
         LocalDate today = LocalDate.now();
         return LocalDateTime.of(today, time);
     }
+
 
 }
 
